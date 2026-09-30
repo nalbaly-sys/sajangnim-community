@@ -1,6 +1,6 @@
 /* ==================================================
    🌙 사장님도 퇴근합니다
-   AUTH : 이메일 + Google + Kakao
+   AUTH : 이메일 + Google
 ================================================== */
 
 let currentUser=null;
@@ -638,60 +638,28 @@ async function loginWithGoogle(){
 
 /* ==================================================
    KAKAO OAuth
-================================================== */
+================================================== 
 
 async function loginWithKakao(){
-
   try{
+    showMessage("Kakao 로그인으로 이동합니다...","loginMessage");
 
-    showMessage(
-      "Kakao 로그인으로 이동합니다...",
-      "loginMessage"
-    );
-
-
-    const {error}=
-      await supabaseClient.auth.signInWithOAuth({
-
-        provider:"kakao",
-
-        options:{
-
-          redirectTo:
-            window.location.origin+
-            window.location.pathname
-        }
-      });
-
+    const {error}=await supabaseClient.auth.signInWithOAuth({
+      provider:"kakao",
+      options:{
+        redirectTo:window.location.origin+window.location.pathname
+      }
+    });
 
     if(error){
-
-      console.error(
-        "Kakao 로그인 오류:",
-        error
-      );
-
-      showMessage(
-        "Kakao 로그인 오류: "+
-        error.message,
-        "loginMessage"
-      );
+      console.error("Kakao 로그인 오류:",error);
+      showMessage("Kakao 로그인 오류: "+error.message,"loginMessage");
     }
-
-
   }catch(error){
-
-    console.error(
-      "Kakao 로그인 예외:",
-      error
-    );
-
-    showMessage(
-      "Kakao 로그인 중 오류가 발생했습니다.",
-      "loginMessage"
-    );
+    console.error("Kakao 로그인 예외:",error);
+    showMessage("Kakao 로그인 중 오류가 발생했습니다.","loginMessage");
   }
-}
+}*/
 
 
 /* ==================================================
@@ -816,7 +784,7 @@ function createSocialSignupButtons(){
   );
 
 
-  /* Kakao 회원가입 */
+  /* Kakao 회원가입 
 
   const kakaoButton=
     document.createElement(
@@ -847,7 +815,7 @@ function createSocialSignupButtons(){
 
   box.appendChild(
     kakaoButton
-  );
+  );*/
 
 
   signupButton.insertAdjacentElement(
@@ -979,7 +947,7 @@ function createSocialLoginButtons(){
   );
 
 
-  /* Kakao 로그인 */
+  /* Kakao 로그인 
 
   const kakaoButton=
     document.createElement(
@@ -1010,7 +978,7 @@ function createSocialLoginButtons(){
 
   box.appendChild(
     kakaoButton
-  );
+  );*/
 
 
   loginButton.insertAdjacentElement(
