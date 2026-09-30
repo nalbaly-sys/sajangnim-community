@@ -158,6 +158,52 @@
 
     </section>
 
+        <!-- ==========================================
+            POST LIST
+        ========================================== -->
+
+        <section
+          id="postSection"
+          class="post-section"
+          style="display:none;"
+        >
+
+          <div class="post-section-header">
+
+            <div>
+              <h2>📝 사장님 이야기</h2>
+
+              <p class="post-section-description">
+                오늘 있었던 일, 답답했던 이야기,
+                다른 사장님들과 나누고 싶은 이야기를 남겨보세요.
+              </p>
+            </div>
+
+            <button
+              class="big-button primary"
+              onclick="openPostModal()"
+            >
+              글쓰기
+            </button>
+
+          </div>
+
+
+          <!-- 게시글 목록 -->
+
+          <div
+            id="postList"
+            class="post-list"
+          >
+
+            <div class="post-loading">
+              게시글을 불러오는 중입니다...
+            </div>
+
+          </div>
+
+        </section>
+
   </main>
 
 
@@ -339,6 +385,296 @@
 
         <button onclick="switchToSignup()">
           회원가입
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+    <!-- ==========================================
+       POST WRITE MODAL
+  =========================================== -->
+
+  <div
+    id="postModal"
+    class="modal"
+    onclick="closeModalOutside(event, 'postModal')"
+  >
+
+    <div class="modal-box">
+
+      <button
+        class="modal-close"
+        onclick="closeModal('postModal')"
+      >
+        ×
+      </button>
+
+      <h2>📝 사장님 이야기 쓰기</h2>
+
+      <p class="modal-description">
+        오늘도 장사하느라 고생하셨습니다.
+      </p>
+
+      <label>
+        카테고리
+      </label>
+
+      <select id="postCategory">
+
+        <option value="오늘의 고충">🔥 오늘의 고충</option>
+        <option value="웃픈 장사썰">😂 웃픈 장사썰</option>
+        <option value="사장님 하소연">😭 사장님 하소연</option>
+        <option value="장사 노하우">💡 장사 노하우</option>
+        <option value="사장님 위로">❤️ 사장님 위로</option>
+        <option value="자유게시판">🗣️ 자유게시판</option>
+
+      </select>
+
+      <label>
+        업종
+      </label>
+
+      <select id="postBusinessType">
+
+        <option value="">업종을 선택하세요</option>
+        <option value="꽃집">🌸 꽃집</option>
+        <option value="식당">🍚 식당</option>
+        <option value="카페">☕ 카페</option>
+        <option value="의류">👕 의류</option>
+        <option value="미용">💇 미용</option>
+        <option value="소매">🛍️ 소매</option>
+        <option value="온라인">💻 온라인</option>
+        <option value="서비스">🛠️ 서비스</option>
+        <option value="기타">📦 기타</option>
+
+      </select>
+
+      <label>
+        제목
+      </label>
+
+      <input
+        id="postTitle"
+        type="text"
+        maxlength="100"
+        placeholder="예: 새벽 2시에 꽃 주문이 들어왔습니다"
+      >
+
+      <label>
+        내용
+      </label>
+
+      <textarea
+        id="postContent"
+        maxlength="5000"
+        rows="8"
+        placeholder="사장님들의 이야기를 들려주세요."
+      ></textarea>
+
+      <label class="post-anonymous-label">
+
+        <input
+          id="postAnonymous"
+          type="checkbox"
+          checked
+        >
+
+        익명으로 작성하기
+
+      </label>
+
+      <button
+        class="modal-submit"
+        onclick="createPost()"
+      >
+        게시글 등록하기
+      </button>
+
+      <div
+        id="postMessage"
+        class="form-message"
+      ></div>
+
+    </div>
+
+  </div>
+
+    <!-- ==========================================
+       POST DETAIL MODAL
+  =========================================== -->
+
+  <div
+    id="postDetailModal"
+    class="modal"
+    onclick="closePostDetailOutside(event)"
+  >
+
+    <div class="modal-box post-detail-box">
+
+      <button
+        class="modal-close"
+        onclick="closePostDetail()"
+      >
+        ×
+      </button>
+
+
+      <!-- 카테고리 / 업종 -->
+
+      <div class="post-detail-meta">
+
+        <span
+          id="detailCategory"
+          class="post-category"
+        ></span>
+
+        <span
+          id="detailBusinessType"
+          class="post-business-type"
+        ></span>
+
+      </div>
+
+
+      <!-- 제목 -->
+
+      <h2
+        id="detailTitle"
+        class="post-detail-title"
+      ></h2>
+
+
+      <!-- 작성자 / 날짜 -->
+
+      <div
+        id="detailAuthor"
+        class="post-detail-author"
+      ></div>
+
+
+      <!-- 본문 -->
+
+      <div
+        id="detailContent"
+        class="post-detail-content"
+      ></div>
+
+
+      <!-- 조회수 -->
+
+      <div
+        id="detailViewCount"
+        class="post-detail-view"
+      ></div>
+
+
+      <!-- 반응 -->
+
+      <div class="post-reactions">
+
+        <button
+          type="button"
+          onclick="reactToPost('공감')"
+        >
+          ❤️ <span id="reactionLike">0</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="reactToPost('웃김')"
+        >
+          😂 <span id="reactionFunny">0</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="reactToPost('나도 겪음')"
+        >
+          😭 <span id="reactionSame">0</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="reactToPost('열받음')"
+        >
+          😡 <span id="reactionAngry">0</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="reactToPost('힘내세요')"
+        >
+          💪 <span id="reactionCheer">0</span>
+        </button>
+
+      </div>
+
+
+      <!-- 댓글 -->
+
+      <div class="post-comment-section">
+
+        <h3>
+          💬 댓글
+        </h3>
+
+        <div
+          id="commentList"
+          class="comment-list"
+        >
+          댓글을 불러오는 중입니다...
+        </div>
+
+
+        <div class="comment-write">
+
+          <textarea
+            id="commentContent"
+            maxlength="1000"
+            rows="4"
+            placeholder="사장님께 따뜻한 한마디를 남겨주세요."
+          ></textarea>
+
+
+          <label class="comment-anonymous-label">
+
+            <input
+              id="commentAnonymous"
+              type="checkbox"
+              checked
+            >
+
+            익명으로 작성하기
+
+          </label>
+
+
+          <button type="button" class="modal-submit" onclick="submitComment()">댓글 등록</button>
+
+
+          <div
+            id="commentMessage"
+            class="form-message"
+          ></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- 신고 -->
+
+      <div class="post-report-area">
+
+        <button
+          type="button"
+          class="post-report-button"
+          onclick="reportCurrentPost()"
+        >
+          🚨 게시글 신고
         </button>
 
       </div>

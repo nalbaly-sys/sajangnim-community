@@ -2116,3 +2116,174 @@ async function loadComments(postId){
   }
 
 }
+
+// ==========================================
+// POST : 댓글 작성
+// ==========================================
+
+async function submitComment(){
+
+  if(!currentUser){
+
+    alert("댓글을 작성하려면 로그인해주세요.");
+    return;
+  }
+
+  if(!currentPostId){
+    return;
+  }
+
+  const contentElement =
+    $("commentContent");
+
+  const anonymousElement =
+    $("commentAnonymous");
+
+  const messageElement =
+    $("commentMessage");
+
+  if(!contentElement){
+    return;
+  }
+
+  const content =
+    contentElement.value.trim();
+
+  const isAnonymous =
+    anonymousElement
+      ? anonymousElement.checked === true
+      : true;
+
+  if(!content){
+
+    if(messageElement){
+      messageElement.textContent =
+        "댓글 내용을 입력해주세요.";
+    }
+
+    return;
+  }
+
+  if(content.length < 2){
+
+    if(messageElement){
+      messageElement.textContent =
+        "댓글은 2자 이상 입력해주세요.";
+    }
+
+    return;
+  }
+
+  if(content.length > 1000){
+
+    if(messageElement){
+      messageElement.textContent =
+        "댓글은 1000자 이하로 입력해주세요.";
+    }
+
+    return;
+  }
+
+  const submitButton =
+    document.querySelector(
+      ".comment-write .modal-submit"
+    );
+
+  if(submitButton){
+
+    submitButton.disabled = true;
+
+    submitButton.textContent =
+      "등록 중...";
+  }
+
+  if(messageElement){
+    messageElement.textContent =
+      "";
+  }
+
+  try{
+
+    const { data, error } =
+      await supabaseClient
+        .from("comments")
+        .insert({
+
+          post_id:
+            currentPostId,
+
+          user_id:
+            currentUser.id,
+
+          content:
+            content,
+
+          is_anonymous:
+            isAnonymous,
+
+          status:
+            "ACTIVE"
+
+        })
+        .select()
+        .single();
+
+    if(error){
+
+      console.error(
+        "댓글 등록 오류:",
+        error
+      );
+
+      if(messageElement){
+        messageElement.textContent =
+          "댓글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.";
+      }
+
+      return;
+    }
+
+    console.log(
+      "댓글 등록 완료:",
+      data
+    );
+
+    contentElement.value = "";
+
+    if(messageElement){
+
+      messageElement.textContent =
+        "댓글이 등록되었습니다.";
+    }
+
+    await loadComments(
+      currentPostId
+    );
+
+  }catch(error){
+
+    console.error(
+      "댓글 등록 예외:",
+      error
+    );
+
+    if(messageElement){
+
+      messageElement.textContent =
+        "오류가 발생했습니다.";
+    }
+
+  }finally{
+
+    if(submitButton){
+
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        "댓글 등록";
+    }
+
+  }
+
+}
