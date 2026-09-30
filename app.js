@@ -635,33 +635,6 @@ async function loginWithGoogle(){
   }
 }
 
-
-/* ==================================================
-   KAKAO OAuth
-================================================== 
-
-async function loginWithKakao(){
-  try{
-    showMessage("Kakao 로그인으로 이동합니다...","loginMessage");
-
-    const {error}=await supabaseClient.auth.signInWithOAuth({
-      provider:"kakao",
-      options:{
-        redirectTo:window.location.origin+window.location.pathname
-      }
-    });
-
-    if(error){
-      console.error("Kakao 로그인 오류:",error);
-      showMessage("Kakao 로그인 오류: "+error.message,"loginMessage");
-    }
-  }catch(error){
-    console.error("Kakao 로그인 예외:",error);
-    showMessage("Kakao 로그인 중 오류가 발생했습니다.","loginMessage");
-  }
-}*/
-
-
 /* ==================================================
    회원가입 화면
    Google / Kakao 버튼 자동 생성
@@ -782,41 +755,6 @@ function createSocialSignupButtons(){
   box.appendChild(
     googleButton
   );
-
-
-  /* Kakao 회원가입 
-
-  const kakaoButton=
-    document.createElement(
-      "button"
-    );
-
-  kakaoButton.type=
-    "button";
-
-  kakaoButton.textContent=
-    "🟡 Kakao로 회원가입";
-
-  kakaoButton.className=
-    "modal-submit";
-
-  kakaoButton.style.background=
-    "#FEE500";
-
-  kakaoButton.style.color=
-    "#191919";
-
-  kakaoButton.style.border=
-    "none";
-
-  kakaoButton.onclick=
-    loginWithKakao;
-
-
-  box.appendChild(
-    kakaoButton
-  );*/
-
 
   signupButton.insertAdjacentElement(
     "afterend",
@@ -945,40 +883,6 @@ function createSocialLoginButtons(){
   box.appendChild(
     googleButton
   );
-
-
-  /* Kakao 로그인 
-
-  const kakaoButton=
-    document.createElement(
-      "button"
-    );
-
-  kakaoButton.type=
-    "button";
-
-  kakaoButton.textContent=
-    "🟡 Kakao로 로그인";
-
-  kakaoButton.className=
-    "modal-submit";
-
-  kakaoButton.style.background=
-    "#FEE500";
-
-  kakaoButton.style.color=
-    "#191919";
-
-  kakaoButton.style.border=
-    "none";
-
-  kakaoButton.onclick=
-    loginWithKakao;
-
-
-  box.appendChild(
-    kakaoButton
-  );*/
 
 
   loginButton.insertAdjacentElement(
