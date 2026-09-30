@@ -218,6 +218,13 @@ async function applySessionUser(user){
 
 function updateUserUI(){
 
+  const postSection = $("postSection");
+
+  if(postSection){
+    postSection.style.display =
+      currentUser ? "block" : "none";
+  }
+
   const loggedIn=!!currentUser;
 
 
@@ -259,12 +266,14 @@ function updateUserUI(){
 
   if(loggedIn){
 
-    if($("userNickname")){
+  loadPosts();
 
-      $("userNickname").textContent=
-        currentUser.nickname||
-        "사장님";
-    }
+  if($("userNickname")){
+
+    $("userNickname").textContent =
+      currentUser.nickname ||
+      "사장님";
+  }
 
 
     if($("userBusinessType")){
@@ -1080,3 +1089,1030 @@ document.addEventListener(
     await restoreSession();
   }
 );
+
+// ==========================================
+// POST : 게시글 작성
+// ==========================================
+
+function openPostModal(){
+
+  if(!currentUser){
+
+    const loginModal = $("loginModal");
+
+    if(loginModal){
+      loginModal.style.display = "flex";
+    }
+
+    return;
+  }
+
+  const businessType =
+    currentUser.business_type || "";
+
+  const businessSelect =
+    $("postBusinessType");
+
+  if(businessSelect){
+    businessSelect.value = businessType;
+  }
+
+  const category =
+    $("postCategory");
+
+  if(category){
+    category.value = "오늘의 고충";
+  }
+
+  const title =
+    $("postTitle");
+
+  const content =
+    $("postContent");
+
+  const anonymous =
+    $("postAnonymous");
+
+  const message =
+    $("postMessage");
+
+  if(title){
+    title.value = "";
+  }
+
+  if(content){
+    content.value = "";
+  }
+
+  if(anonymous){
+    anonymous.checked = true;
+  }
+
+  if(message){
+    message.textContent = "";
+  }
+
+  const postModal =
+    $("postModal");
+
+  if(postModal){
+    postModal.style.display = "flex";
+  }
+
+}
+
+
+// ==========================================
+// POST : 게시글 등록
+// ==========================================
+
+async function createPost(){
+
+  if(!currentUser){
+
+    openModal("loginModal");
+
+    return;
+  }
+
+  const category =
+    $("postCategory")?.value.trim();
+
+  const businessType =
+    $("postBusinessType")?.value.trim();
+
+  const title =
+    $("postTitle")?.value.trim();
+
+  const content =
+    $("postContent")?.value.trim();
+
+  const isAnonymous =
+    $("postAnonymous")?.checked === true;
+
+  const message =
+    $("postMessage");
+
+
+  // ------------------------------
+  // 기본 입력 검사
+  // ------------------------------
+
+  if(!category){
+
+    if(message){
+      message.textContent =
+        "카테고리를 선택해주세요.";
+    }
+
+    return;
+  }
+
+  if(!businessType){
+
+    if(message){
+      message.textContent =
+        "업종을 선택해주세요.";
+    }
+
+    return;
+  }
+
+  if(!title){
+
+    if(message){
+      message.textContent =
+        "제목을 입력해주세요.";
+    }
+
+    return;
+  }
+
+  if(title.length < 2){
+
+    if(message){
+      message.textContent =
+        "제목은 2자 이상 입력해주세요.";
+    }
+
+    return;
+  }
+
+  if(!content){
+
+    if(message){
+      message.textContent =
+        "내용을 입력해주세요.";
+    }
+
+    return;
+  }
+
+  if(content.length < 5){
+
+    if(message){
+      message.textContent =
+        "내용은 5자 이상 입력해주세요.";
+    }
+
+    return;
+  }
+
+
+  // ------------------------------
+  // 버튼 잠금
+  // ------------------------------
+
+  const submitButton =
+    document.querySelector(
+      '#postModal .modal-submit'
+    );
+
+  if(submitButton){
+
+    submitButton.disabled = true;
+    submitButton.textContent =
+      "등록 중...";
+  }
+
+
+  try{
+
+    // ------------------------------
+    // Supabase 게시글 저장
+    // ------------------------------
+
+    const { data, error } =
+      await supabaseClient
+        .from("posts")
+        .insert({
+
+          user_id:
+            currentUser.id,
+
+          category:
+            category,
+
+          business_type:
+            businessType,
+
+          title:
+            title,
+
+          content:
+            content,
+
+          is_anonymous:
+            isAnonymous,
+
+          view_count:
+            0,
+
+          status:
+            "ACTIVE"
+
+        })
+        .select()
+        .single();
+
+
+    if(error){
+
+      console.error(
+        "게시글 등록 오류:",
+        error
+      );
+
+      if(message){
+
+        message.textContent =
+          "게시글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.";
+
+      }
+
+      return;
+    }
+
+
+    // ------------------------------
+    // 성공
+    // ------------------------------
+
+    console.log(
+      "게시글 등록 완료:",
+      data
+    );
+
+    if(message){
+
+      message.textContent =
+        "게시글이 등록되었습니다.";
+
+    }
+
+    setTimeout(() => {
+
+      closeModal("postModal");
+
+    }, 700);
+
+
+  }catch(error){
+
+    console.error(
+      "게시글 등록 예외:",
+      error
+    );
+
+    if(message){
+
+      message.textContent =
+        "오류가 발생했습니다.";
+
+    }
+
+  }finally{
+
+    if(submitButton){
+
+      submitButton.disabled = false;
+
+      submitButton.textContent =
+        "게시글 등록하기";
+
+    }
+
+  }
+
+}
+
+// ==========================================
+// POST : 게시글 목록 조회
+// ==========================================
+
+async function loadPosts(){
+
+  const postList = $("postList");
+
+  if(!postList){
+    return;
+  }
+
+  postList.innerHTML =
+    '<div class="post-loading">게시글을 불러오는 중입니다...</div>';
+
+  try{
+
+    const { data, error } =
+      await supabaseClient
+        .from("posts")
+        .select(`
+          id,
+          category,
+          business_type,
+          title,
+          content,
+          is_anonymous,
+          view_count,
+          created_at
+        `)
+        .eq("status", "ACTIVE")
+        .order("created_at", {
+          ascending:false
+        })
+        .limit(20);
+
+    if(error){
+
+      console.error(
+        "게시글 목록 조회 오류:",
+        error
+      );
+
+      postList.innerHTML =
+        '<div class="post-empty">게시글을 불러오지 못했습니다.</div>';
+
+      return;
+    }
+
+    if(!data || data.length === 0){
+
+      postList.innerHTML =
+        '<div class="post-empty">아직 등록된 이야기가 없습니다.</div>';
+
+      return;
+    }
+
+    postList.innerHTML =
+      data.map(post => {
+
+        const category =
+          escapePostText(post.category || "");
+
+        const businessType =
+          escapePostText(post.business_type || "");
+
+        const title =
+          escapePostText(post.title || "");
+
+        const content =
+          escapePostText(post.content || "");
+
+        const date =
+          formatPostDate(post.created_at);
+
+        const author =
+          post.is_anonymous
+            ? "익명 사장님"
+            : "사장님";
+
+        return `
+          <article
+            class="post-card"
+            onclick="openPostDetail(${post.id})"
+          >
+
+            <div class="post-card-top">
+
+              <span class="post-category">
+                ${category}
+              </span>
+
+              <span class="post-business-type">
+                ${businessType}
+              </span>
+
+            </div>
+
+            <h3 class="post-title">
+              ${title}
+            </h3>
+
+            <p class="post-preview">
+              ${content}
+            </p>
+
+            <div class="post-card-bottom">
+
+              <span>
+                ${author}
+              </span>
+
+              <span>
+                👁️ ${post.view_count || 0}
+              </span>
+
+              <span>
+                ${date}
+              </span>
+
+            </div>
+
+          </article>
+        `;
+
+      }).join("");
+
+  }catch(error){
+
+    console.error(
+      "게시글 목록 예외:",
+      error
+    );
+
+    postList.innerHTML =
+      '<div class="post-empty">게시글을 불러오지 못했습니다.</div>';
+
+  }
+
+}
+
+
+// ==========================================
+// POST : HTML 안전 처리
+// ==========================================
+
+function escapePostText(value){
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+// ==========================================
+// POST : 날짜 표시
+// ==========================================
+
+function formatPostDate(dateString){
+
+  if(!dateString){
+    return "";
+  }
+
+  const date =
+    new Date(dateString);
+
+  if(isNaN(date.getTime())){
+    return "";
+  }
+
+  return date.toLocaleDateString(
+    "ko-KR",
+    {
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit"
+    }
+  );
+
+}
+
+
+// ==========================================
+// POST : 상세보기 임시
+// ==========================================
+
+// ==========================================
+// POST : 게시글 상세보기
+// ==========================================
+
+let currentPostId = null;
+
+async function openPostDetail(postId){
+
+  if(!postId){
+    return;
+  }
+
+  currentPostId = postId;
+
+  const modal =
+    $("postDetailModal");
+
+  if(!modal){
+    console.error(
+      "postDetailModal을 찾을 수 없습니다."
+    );
+    return;
+  }
+
+
+  // ------------------------------
+  // 상세창 초기화
+  // ------------------------------
+
+  $("detailCategory").textContent = "";
+  $("detailBusinessType").textContent = "";
+  $("detailTitle").textContent = "";
+  $("detailAuthor").textContent = "";
+  $("detailContent").textContent = "";
+  $("detailViewCount").textContent =
+    "불러오는 중...";
+
+  $("reactionLike").textContent = "0";
+  $("reactionFunny").textContent = "0";
+  $("reactionSame").textContent = "0";
+  $("reactionAngry").textContent = "0";
+  $("reactionCheer").textContent = "0";
+
+  $("commentList").innerHTML =
+    '<div class="post-loading">댓글을 불러오는 중입니다...</div>';
+
+  $("commentContent").value = "";
+
+  $("commentMessage").textContent = "";
+
+
+  // ------------------------------
+  // 모달 표시
+  // ------------------------------
+
+  modal.style.display = "flex";
+
+
+  try{
+
+    // ------------------------------
+    // 게시글 조회
+    // ------------------------------
+
+    const { data:post, error } =
+      await supabaseClient
+        .from("posts")
+        .select(`
+          id,
+          category,
+          business_type,
+          title,
+          content,
+          is_anonymous,
+          view_count,
+          created_at
+        `)
+        .eq("id", postId)
+        .eq("status", "ACTIVE")
+        .single();
+
+
+    if(error){
+
+      console.error(
+        "게시글 상세 조회 오류:",
+        error
+      );
+
+      $("detailContent").textContent =
+        "게시글을 불러오지 못했습니다.";
+
+      return;
+    }
+
+
+    if(!post){
+
+      $("detailContent").textContent =
+        "게시글을 찾을 수 없습니다.";
+
+      return;
+    }
+
+
+    // ------------------------------
+    // 화면 표시
+    // ------------------------------
+
+    $("detailCategory").textContent =
+      post.category || "";
+
+    $("detailBusinessType").textContent =
+      post.business_type || "";
+
+    $("detailTitle").textContent =
+      post.title || "";
+
+    $("detailAuthor").textContent =
+      post.is_anonymous
+        ? "익명 사장님"
+        : "사장님";
+
+    $("detailContent").textContent =
+      post.content || "";
+
+
+    const currentViewCount =
+      Number(post.view_count || 0);
+
+    $("detailViewCount").textContent =
+      `👁️ ${currentViewCount}`;
+
+
+    // ------------------------------
+    // 조회수 증가
+    // ------------------------------
+
+    const newViewCount =
+      currentViewCount + 1;
+
+    const { error:viewError } =
+      await supabaseClient
+        .from("posts")
+        .update({
+          view_count:newViewCount
+        })
+        .eq("id", postId);
+
+    if(viewError){
+
+      console.warn(
+        "조회수 증가 실패:",
+        viewError
+      );
+
+    }else{
+
+      $("detailViewCount").textContent =
+        `👁️ ${newViewCount}`;
+
+    }
+
+
+    // ------------------------------
+    // 반응 조회
+    // ------------------------------
+
+    await loadPostReactions(postId);
+
+
+    // ------------------------------
+    // 댓글 조회
+    // ------------------------------
+
+    await loadComments(postId);
+
+
+  }catch(error){
+
+    console.error(
+      "게시글 상세 예외:",
+      error
+    );
+
+    $("detailContent").textContent =
+      "오류가 발생했습니다.";
+
+  }
+
+}
+
+
+// ==========================================
+// POST : 상세창 닫기
+// ==========================================
+
+function closePostDetail(){
+
+  const modal =
+    $("postDetailModal");
+
+  if(modal){
+    modal.style.display = "none";
+  }
+
+  currentPostId = null;
+
+}
+
+
+// ==========================================
+// POST : 바깥 영역 클릭 닫기
+// ==========================================
+
+function closePostDetailOutside(event){
+
+  if(event.target.id === "postDetailModal"){
+
+    closePostDetail();
+
+  }
+
+}
+
+// ==========================================
+// POST : 반응 조회
+// ==========================================
+
+async function loadPostReactions(postId){
+
+  const reactionMap = {
+    "공감":"reactionLike",
+    "웃김":"reactionFunny",
+    "나도 겪음":"reactionSame",
+    "열받음":"reactionAngry",
+    "힘내세요":"reactionCheer"
+  };
+
+  try{
+
+    const { data, error } =
+      await supabaseClient
+        .from("reactions")
+        .select("reaction_type")
+        .eq("post_id", postId);
+
+    if(error){
+
+      console.error(
+        "반응 조회 오류:",
+        error
+      );
+
+      return;
+    }
+
+
+    const counts = {
+      "공감":0,
+      "웃김":0,
+      "나도 겪음":0,
+      "열받음":0,
+      "힘내세요":0
+    };
+
+
+    (data || []).forEach(row => {
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          counts,
+          row.reaction_type
+        )
+      ){
+
+        counts[row.reaction_type]++;
+
+      }
+
+    });
+
+
+    Object.keys(reactionMap).forEach(type => {
+
+      const element =
+        $(reactionMap[type]);
+
+      if(element){
+
+        element.textContent =
+          counts[type];
+
+      }
+
+    });
+
+
+  }catch(error){
+
+    console.error(
+      "반응 조회 예외:",
+      error
+    );
+
+  }
+
+}
+
+
+// ==========================================
+// POST : 반응 등록
+// ==========================================
+
+async function reactToPost(reactionType){
+
+  if(!currentUser){
+
+    alert(
+      "반응을 남기려면 로그인해주세요."
+    );
+
+    return;
+  }
+
+  if(!currentPostId){
+
+    return;
+  }
+
+
+  try{
+
+    const { data:existing, error:checkError } =
+      await supabaseClient
+        .from("reactions")
+        .select("id")
+        .eq("post_id", currentPostId)
+        .eq("user_id", currentUser.id)
+        .eq("reaction_type", reactionType)
+        .maybeSingle();
+
+
+    if(checkError){
+
+      console.error(
+        "반응 확인 오류:",
+        checkError
+      );
+
+      return;
+    }
+
+
+    // 이미 눌렀으면 취소
+    if(existing){
+
+      const { error:deleteError } =
+        await supabaseClient
+          .from("reactions")
+          .delete()
+          .eq("id", existing.id);
+
+      if(deleteError){
+
+        console.error(
+          "반응 취소 오류:",
+          deleteError
+        );
+
+        return;
+      }
+
+    }else{
+
+      // 처음 누르면 등록
+      const { error:insertError } =
+        await supabaseClient
+          .from("reactions")
+          .insert({
+
+            post_id:
+              currentPostId,
+
+            user_id:
+              currentUser.id,
+
+            reaction_type:
+              reactionType
+
+          });
+
+      if(insertError){
+
+        console.error(
+          "반응 등록 오류:",
+          insertError
+        );
+
+        return;
+      }
+
+    }
+
+
+    // 반응 수 다시 불러오기
+
+    await loadPostReactions(
+      currentPostId
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "반응 처리 예외:",
+      error
+    );
+
+  }
+
+}
+
+// ==========================================
+// POST : 댓글 목록 조회
+// ==========================================
+
+async function loadComments(postId){
+
+  const commentList =
+    $("commentList");
+
+  if(!commentList){
+    return;
+  }
+
+  commentList.innerHTML =
+    '<div class="post-loading">댓글을 불러오는 중입니다...</div>';
+
+
+  try{
+
+    const { data, error } =
+      await supabaseClient
+        .from("comments")
+        .select(`
+          id,
+          post_id,
+          user_id,
+          content,
+          is_anonymous,
+          created_at
+        `)
+        .eq("post_id", postId)
+        .eq("status", "ACTIVE")
+        .order("created_at", {
+          ascending:true
+        });
+
+
+    if(error){
+
+      console.error(
+        "댓글 조회 오류:",
+        error
+      );
+
+      commentList.innerHTML =
+        '<div class="post-empty">댓글을 불러오지 못했습니다.</div>';
+
+      return;
+    }
+
+
+    if(!data || data.length === 0){
+
+      commentList.innerHTML =
+        '<div class="post-empty">아직 댓글이 없습니다.</div>';
+
+      return;
+    }
+
+
+    commentList.innerHTML =
+      data.map(comment => {
+
+        const content =
+          escapePostText(
+            comment.content || ""
+          );
+
+        const author =
+          comment.is_anonymous
+            ? "익명 사장님"
+            : "사장님";
+
+        const date =
+          formatPostDate(
+            comment.created_at
+          );
+
+        return `
+          <div class="comment-item">
+
+            <div class="comment-header">
+
+              <span class="comment-author">
+                ${author}
+              </span>
+
+              <span class="comment-date">
+                ${date}
+              </span>
+
+            </div>
+
+            <div class="comment-content">
+              ${content}
+            </div>
+
+          </div>
+        `;
+
+      }).join("");
+
+
+  }catch(error){
+
+    console.error(
+      "댓글 조회 예외:",
+      error
+    );
+
+    commentList.innerHTML =
+      '<div class="post-empty">댓글을 불러오지 못했습니다.</div>';
+
+  }
+
+}
