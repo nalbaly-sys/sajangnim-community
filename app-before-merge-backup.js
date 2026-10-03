@@ -733,11 +733,6 @@ async function openPostDetail(postId){
   $("detailAuthor").textContent="";
   $("detailContent").textContent="";
   $("detailViewCount").textContent="불러오는 중...";
-  const ownerPostActions=$("ownerPostActions");
-
-  if(ownerPostActions){
-    ownerPostActions.style.display="none";
-  }
 
   $("reactionLike").textContent="0";
   $("reactionFunny").textContent="0";
@@ -756,7 +751,6 @@ async function openPostDetail(postId){
       .from("posts")
       .select(`
         id,
-        user_id,
         category,
         business_type,
         title,
@@ -785,13 +779,6 @@ async function openPostDetail(postId){
     $("detailTitle").textContent=post.title||"";
     $("detailAuthor").textContent=post.is_anonymous?"익명 사장님":"사장님";
     $("detailContent").textContent=post.content||"";
-    if(
-      ownerPostActions &&
-      currentUser &&
-      post.user_id===currentUser.id
-    ){
-      ownerPostActions.style.display="block";
-    }
 
     const currentViewCount=Number(post.view_count||0);
 
@@ -1107,83 +1094,10 @@ async function submitComment(){
   }
 }
 
-//==================================================
-// 본인 게시글 삭제
-//==================================================
-async function deleteMyPost(){
+/* ==================================================
+   POST : 게시글 신고
+================================================== */
 
-  if(!currentUser){
-    alert("게시글을 삭제하려면 로그인해주세요.");
-    return;
-  }
-
-  if(!currentPostId){
-    alert("삭제할 게시글을 찾을 수 없습니다.");
-    return;
-  }
-
-  const confirmed=confirm(
-    "이 게시글을 삭제하시겠습니까?\n\n" +
-    "삭제한 게시글은 일반 게시글 목록에서 더 이상 표시되지 않습니다."
-  );
-
-  if(!confirmed)return;
-
-  try{
-
-    const {data,error}=await supabaseClient
-      .from("posts")
-      .update({
-        status:"DELETED"
-      })
-      .eq("id",currentPostId)
-      .eq("user_id",currentUser.id)
-      .eq("status","ACTIVE")
-      .select("id")
-      .maybeSingle();
-
-    if(error){
-
-      console.error("게시글 삭제 오류:",error);
-
-      alert(
-        "게시글 삭제에 실패했습니다.\n" +
-        "잠시 후 다시 시도해주세요."
-      );
-
-      return;
-    }
-
-    if(!data){
-
-      alert(
-        "게시글을 삭제할 수 없습니다.\n\n" +
-        "본인이 작성한 게시글인지 확인해주세요."
-      );
-
-      return;
-    }
-
-    alert("게시글이 삭제되었습니다.");
-
-    closePostDetail();
-
-    await loadPosts();
-
-  }catch(error){
-
-    console.error("게시글 삭제 예외:",error);
-
-    alert(
-      "오류가 발생했습니다.\n" +
-      "잠시 후 다시 시도해주세요."
-    );
-  }
-}
-
-//==================================================
-// 게시글 신고
-//==================================================
 async function reportCurrentPost(){
 
   if(!currentUser){
@@ -1231,15 +1145,6 @@ async function reportCurrentPost(){
 
       console.error("게시글 신고 오류:",error);
 
-      // 같은 사용자가 같은 게시글을 다시 신고한 경우
-      if(error.code==="23505"){
-        alert(
-          "이미 신고한 게시글입니다.\n\n" +
-          "같은 게시글은 한 번만 신고할 수 있습니다."
-        );
-        return;
-      }
-
       alert(
         "신고 접수에 실패했습니다.\n" +
         "잠시 후 다시 시도해주세요."
@@ -1264,3 +1169,79 @@ async function reportCurrentPost(){
   }
 }
 
+/* ==================================================
+   POST : 게시글 신고
+================================================== */
+
+async function reportCurrentPost() {
+
+  if (!currentUser) {
+    alert("게시글을 신고하려면 로그인해주세요.");
+    return;
+  }
+
+  if (!currentPostId) {
+    alert("신고할 게시글을 찾을 수 없습니다.");
+    return;
+  }
+
+  const reason = prompt(
+    "신고 사유를 입력해주세요.\n\n" +
+    "예: 욕설, 개인정보 노출, 광고, 음란성, 도배 등"
+  );
+
+  if (reason === null) {
+    return;
+  }
+
+  const detail = reason.trim();
+
+  if (!detail) {
+    alert("신고 사유를 입력해주세요.");
+    return;
+  }
+
+  if (detail.length > 500) {
+    alert("신고 사유는 500자 이하로 입력해주세요.");
+    return;
+  }
+
+  try {
+
+    const { error } = await supabaseClient
+      .from("reports")
+      .insert({
+        target_type: "POST",
+        target_id: currentPostId,
+        reporter_id: currentUser.id,
+        reason: detail,
+        status: "PENDING"
+      });
+
+    if (error) {
+
+      console.error("게시글 신고 오류:", error);
+
+      alert(
+        "신고 접수에 실패했습니다.\n" +
+        "잠시 후 다시 시도해주세요."
+      );
+
+      return;
+    }
+
+    alert(
+      "신고가 접수되었습니다.\n\n" +
+      "관리자 확인 후 필요한 조치를 진행합니다."
+    );
+
+  } catch (error) {
+
+    console.error("게시글 신고 예외:", error);
+
+    alert(
+      "오류가 발생했습니다.\n" +
+      "잠시 후 다시 시도해주세요."
+    );
+  }
+}

@@ -746,3 +746,26 @@ button{cursor:pointer}
   }
 
 }
+
+/* ==========================================
+   본인 게시글 관리
+========================================== */
+
+.owner-post-actions{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid #f3f4f6;
+  text-align:right;
+}
+
+.post-delete-button{
+  border:0;
+  background:none;
+  color:#9ca3af;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.post-delete-button:hover{
+  color:#ef4444;
+}
