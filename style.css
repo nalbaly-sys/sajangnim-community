@@ -769,3 +769,113 @@ button{cursor:pointer}
 .post-delete-button:hover{
   color:#ef4444;
 }
+
+/* ==========================================
+   댓글 삭제 버튼
+========================================== */
+
+.comment-delete-button{
+  display:inline-block;
+  margin-top:8px;
+  padding:5px 9px;
+  border:1px solid #e5e7eb;
+  border-radius:6px;
+  background:#ffffff;
+  color:#9ca3af;
+  font-size:12px;
+  cursor:pointer;
+  transition:background 0.2s,color 0.2s,border-color 0.2s;
+}
+
+.comment-delete-button:hover{
+  background:#fef2f2;
+  color:#dc2626;
+  border-color:#fecaca;
+}
+
+.comment-delete-button:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+
+/* ==========================================
+   댓글 수정 · 삭제 · 신고 버튼 공통 디자인
+========================================== */
+.comment-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  margin-top:10px;
+}
+
+.comment-edit-button,
+.comment-delete-button,
+.comment-report-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:5px 10px;
+  border:1px solid #e5e7eb;
+  border-radius:7px;
+  background:#fff;
+  color:#6b7280;
+  font-family:inherit;
+  font-size:12px;
+  line-height:1.4;
+  cursor:pointer;
+  transition:background .2s,border-color .2s,color .2s;
+}
+
+.comment-edit-button:hover{
+  background:#eff6ff;
+  border-color:#bfdbfe;
+  color:#2563eb;
+}
+
+.comment-delete-button:hover,
+.comment-report-button:hover{
+  background:#fef2f2;
+  border-color:#fecaca;
+  color:#dc2626;
+}
+
+.comment-edit-button:disabled,
+.comment-delete-button:disabled,
+.comment-report-button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+
+/* 댓글 버튼 높이 및 정렬 최종 보정 */
+.comment-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.comment-actions .comment-edit-button,
+.comment-actions .comment-delete-button,
+.comment-actions .comment-report-button{
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  height:30px !important;
+  min-height:30px !important;
+  padding:0 10px !important;
+  margin:0 !important;
+  border:1px solid #e5e7eb;
+  border-radius:7px;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:400;
+  line-height:1 !important;
+  vertical-align:middle;
+}

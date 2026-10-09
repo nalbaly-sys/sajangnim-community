@@ -117,6 +117,7 @@ async function applySessionUser(user){
   updateUserUI();
 }
 
+
 /* ==================================================
    USER UI
 ================================================== */
@@ -124,8 +125,9 @@ async function applySessionUser(user){
 function updateUserUI(){
   const postSection=$("postSection");
 
+  // 게시글 목록은 로그인하지 않아도 표시
   if(postSection){
-    postSection.style.display=currentUser?"block":"none";
+    postSection.style.display="block";
   }
 
   const loggedIn=!!currentUser;
@@ -147,8 +149,6 @@ function updateUserUI(){
   }
 
   if(loggedIn){
-    loadPosts();
-
     if($("userNickname")){
       $("userNickname").textContent=currentUser.nickname||"사장님";
     }
@@ -157,6 +157,9 @@ function updateUserUI(){
       $("userBusinessType").textContent=currentUser.business_type||"업종 미등록";
     }
   }
+
+  // 로그인 여부와 관계없이 게시글 목록 조회
+  loadPosts();
 }
 
 /* ==================================================
@@ -616,6 +619,8 @@ async function createPost(){
 ================================================== */
 
 async function loadPosts(){
+  console.log("게시글 목록 조회 함수 실행됨");
+
   const postList=$("postList");
 
   if(!postList)return;
@@ -989,6 +994,39 @@ async function loadComments(postId){
       const author=comment.is_anonymous?"익명 사장님":"사장님";
       const date=formatPostDate(comment.created_at);
 
+      const isMyComment=(
+        currentUser &&
+        comment.user_id===currentUser.id
+      );
+
+      const ownerButtons=isMyComment
+        ?`
+          <button
+            type="button"
+            class="comment-edit-button"
+            onclick="editMyComment(${comment.id})"
+          >✏️ 수정</button>
+          <button
+            type="button"
+            class="comment-delete-button"
+            onclick="deleteMyComment(${comment.id})"
+          >🗑️ 삭제</button>
+        `
+        :"";
+
+      const reportButton=(
+        currentUser &&
+        !isMyComment
+      )
+        ?`
+          <button
+            type="button"
+            class="comment-report-button"
+            onclick="reportComment(${comment.id})"
+          >🚨 신고</button>
+        `
+        :"";
+
       return `
         <div class="comment-item">
           <div class="comment-header">
@@ -996,12 +1034,271 @@ async function loadComments(postId){
             <span class="comment-date">${date}</span>
           </div>
           <div class="comment-content">${content}</div>
+          <div class="comment-actions">
+            ${ownerButtons}
+            ${reportButton}
+          </div>
         </div>
       `;
     }).join("");
+
   }catch(error){
     console.error("댓글 조회 예외:",error);
     commentList.innerHTML='<div class="post-empty">댓글을 불러오지 못했습니다.</div>';
+  }
+}
+
+/* ==================================================
+   POST : 본인 댓글 삭제
+================================================== */
+
+async function deleteMyComment(commentId){
+
+  if(!currentUser){
+    alert("댓글을 삭제하려면 로그인해주세요.");
+    return;
+  }
+
+  if(!currentPostId){
+    alert("댓글이 작성된 게시글을 찾을 수 없습니다.");
+    return;
+  }
+
+  const confirmed=confirm(
+    "이 댓글을 삭제하시겠습니까?\n\n" +
+    "삭제한 댓글은 댓글 목록에서 표시되지 않습니다."
+  );
+
+  if(!confirmed)return;
+
+  try{
+    const {data,error}=await supabaseClient
+      .from("comments")
+      .update({
+        status:"DELETED"
+      })
+      .eq("id",commentId)
+      .eq("post_id",currentPostId)
+      .eq("user_id",currentUser.id)
+      .eq("status","ACTIVE")
+      .select("id")
+      .maybeSingle();
+
+    if(error){
+      console.error("댓글 삭제 오류:",error);
+
+      alert(
+        "댓글 삭제에 실패했습니다.\n" +
+        "잠시 후 다시 시도해주세요."
+      );
+
+      return;
+    }
+
+    if(!data){
+      alert(
+        "댓글을 삭제할 수 없습니다.\n" +
+        "본인이 작성한 댓글인지 확인해주세요."
+      );
+
+      return;
+    }
+
+    alert("댓글이 삭제되었습니다.");
+
+    await loadComments(currentPostId);
+
+  }catch(error){
+    console.error("댓글 삭제 예외:",error);
+
+    alert(
+      "오류가 발생했습니다.\n" +
+      "잠시 후 다시 시도해주세요."
+    );
+  }
+}
+
+/* ==================================================
+   POST : 본인 댓글 수정
+================================================== */
+
+async function editMyComment(commentId){
+
+  if(!currentUser){
+    alert("댓글을 수정하려면 로그인해주세요.");
+    return;
+  }
+
+  if(!currentPostId){
+    alert("댓글이 작성된 게시글을 찾을 수 없습니다.");
+    return;
+  }
+
+  try{
+    const {data:comment,error:fetchError}=await supabaseClient
+      .from("comments")
+      .select("id,content")
+      .eq("id",commentId)
+      .eq("post_id",currentPostId)
+      .eq("user_id",currentUser.id)
+      .eq("status","ACTIVE")
+      .maybeSingle();
+
+    if(fetchError){
+      console.error("댓글 조회 오류:",fetchError);
+      alert("댓글을 불러오지 못했습니다.");
+      return;
+    }
+
+    if(!comment){
+      alert("본인이 작성한 댓글을 찾을 수 없습니다.");
+      return;
+    }
+
+    const editedContent=prompt(
+      "수정할 댓글 내용을 입력해주세요.",
+      comment.content
+    );
+
+    if(editedContent===null)return;
+
+    const content=editedContent.trim();
+
+    if(content.length<2){
+      alert("댓글은 2자 이상 입력해주세요.");
+      return;
+    }
+
+    if(content.length>1000){
+      alert("댓글은 1000자 이하로 입력해주세요.");
+      return;
+    }
+
+    const {data,error}=await supabaseClient
+      .from("comments")
+      .update({
+        content:content
+      })
+      .eq("id",commentId)
+      .eq("post_id",currentPostId)
+      .eq("user_id",currentUser.id)
+      .eq("status","ACTIVE")
+      .select("id")
+      .maybeSingle();
+
+    if(error){
+      console.error("댓글 수정 오류:",error);
+      alert("댓글 수정에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    if(!data){
+      alert("댓글을 수정할 수 없습니다. 본인 댓글인지 확인해주세요.");
+      return;
+    }
+
+    alert("댓글이 수정되었습니다.");
+
+    await loadComments(currentPostId);
+
+  }catch(error){
+    console.error("댓글 수정 예외:",error);
+    alert("오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+  }
+}
+
+
+/* ==================================================
+   POST : 다른 사람의 댓글 신고 및 중복 신고 방지
+================================================== */
+async function reportComment(commentId){
+  if(!currentUser){
+    alert("댓글을 신고하려면 로그인해주세요.");
+    return;
+  }
+
+  if(!currentPostId){
+    alert("신고할 댓글이 있는 게시글을 찾을 수 없습니다.");
+    return;
+  }
+
+  try{
+    // 현재 게시글에 있는 활성 댓글인지, 본인 댓글은 아닌지 확인
+    const {data:comment,error:commentError}=await supabaseClient
+      .from("comments")
+      .select("id,user_id")
+      .eq("id",commentId)
+      .eq("post_id",currentPostId)
+      .eq("status","ACTIVE")
+      .maybeSingle();
+
+    if(commentError){
+      console.error("신고 대상 댓글 조회 오류:",commentError);
+      alert("댓글 확인에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    if(!comment){
+      alert("신고할 댓글을 찾을 수 없습니다.");
+      return;
+    }
+
+    if(comment.user_id===currentUser.id){
+      alert("본인이 작성한 댓글은 신고할 수 없습니다.");
+      return;
+    }
+
+    const reason=prompt(
+      "댓글 신고 사유를 입력해주세요.\n\n"+
+      "예: 욕설, 개인정보 노출, 광고, 음란성, 도배 등"
+    );
+
+    if(reason===null)return;
+
+    const detail=reason.trim();
+
+    if(!detail){
+      alert("신고 사유를 입력해주세요.");
+      return;
+    }
+
+    if(detail.length>500){
+      alert("신고 사유는 500자 이하로 입력해주세요.");
+      return;
+    }
+
+    // 댓글 신고 저장
+    const {error}=await supabaseClient
+      .from("reports")
+      .insert({
+        target_type:"COMMENT",
+        target_id:commentId,
+        reporter_id:currentUser.id,
+        reason:detail,
+        status:"PENDING"
+      });
+
+    if(error){
+      console.error("댓글 신고 오류:",error);
+
+      // DB의 UNIQUE 제약 조건으로 중복 신고 감지
+      if(error.code==="23505"){
+        alert(
+          "이미 신고한 댓글입니다.\n\n"+
+          "같은 댓글은 한 번만 신고할 수 있습니다."
+        );
+        return;
+      }
+
+      alert("신고 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    alert("신고가 접수되었습니다.\n관리자 확인 후 필요한 조치를 진행합니다.");
+
+  }catch(error){
+    console.error("댓글 신고 예외:",error);
+    alert("오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
   }
 }
 
