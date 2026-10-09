@@ -1209,6 +1209,53 @@ async function editMyComment(commentId){
 
 
 /* ==================================================
+   신고 사유 선택 공통 함수
+================================================== */
+async function requestReportReason(targetLabel){
+  const reasons = [
+    "욕설·비방",
+    "광고·도배",
+    "개인정보 노출",
+    "불쾌한 내용",
+    "기타"
+  ];
+
+  const menu = reasons.map((reason, index) =>
+    `${index + 1}. ${reason}`
+  ).join("\n");
+
+  const selected = prompt(
+    `${targetLabel} 신고 사유를 선택해주세요.\n\n${menu}\n\n번호 1~5를 입력해주세요.`
+  );
+
+  if(selected === null) return null;
+
+  const choice = selected.trim();
+  if(!/^[1-5]$/.test(choice)){
+    alert("1부터 5까지의 번호를 입력해주세요.");
+    return null;
+  }
+
+  const reason = reasons[Number(choice) - 1];
+
+  const detailInput = prompt(
+    `선택한 사유: ${reason}\n\n추가 설명이 있다면 입력해주세요.\n없으면 비워두고 확인을 눌러주세요.`
+  );
+
+  if(detailInput === null) return null;
+
+  const detail = detailInput.trim();
+
+  if(detail.length > 500){
+    alert("추가 설명은 500자 이하로 입력해주세요.");
+    return null;
+  }
+
+  return { reason, detail: detail || null };
+}
+
+
+/* ==================================================
    POST : 다른 사람의 댓글 신고 및 중복 신고 방지
 ================================================== */
 async function reportComment(commentId){
@@ -1248,24 +1295,9 @@ async function reportComment(commentId){
       return;
     }
 
-    const reason=prompt(
-      "댓글 신고 사유를 입력해주세요.\n\n"+
-      "예: 욕설, 개인정보 노출, 광고, 음란성, 도배 등"
-    );
+    const report = await requestReportReason("댓글");
 
-    if(reason===null)return;
-
-    const detail=reason.trim();
-
-    if(!detail){
-      alert("신고 사유를 입력해주세요.");
-      return;
-    }
-
-    if(detail.length>500){
-      alert("신고 사유는 500자 이하로 입력해주세요.");
-      return;
-    }
+    if(!report) return;
 
     // 댓글 신고 저장
     const {error}=await supabaseClient
@@ -1274,7 +1306,8 @@ async function reportComment(commentId){
         target_type:"COMMENT",
         target_id:commentId,
         reporter_id:currentUser.id,
-        reason:detail,
+        reason:report.reason,
+        detail:report.detail,
         status:"PENDING"
       });
 
@@ -1493,24 +1526,9 @@ async function reportCurrentPost(){
     return;
   }
 
-  const reason=prompt(
-    "신고 사유를 입력해주세요.\n\n" +
-    "예: 욕설, 개인정보 노출, 광고, 음란성, 도배 등"
-  );
+  const report = await requestReportReason("게시글");
 
-  if(reason===null)return;
-
-  const detail=reason.trim();
-
-  if(!detail){
-    alert("신고 사유를 입력해주세요.");
-    return;
-  }
-
-  if(detail.length>500){
-    alert("신고 사유는 500자 이하로 입력해주세요.");
-    return;
-  }
+if(!report) return;
 
   try{
 
@@ -1520,7 +1538,8 @@ async function reportCurrentPost(){
         target_type:"POST",
         target_id:currentPostId,
         reporter_id:currentUser.id,
-        reason:detail,
+        reason:report.reason,
+        detail:report.detail,
         status:"PENDING"
       });
 
