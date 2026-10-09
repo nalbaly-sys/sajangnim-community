@@ -118,12 +118,73 @@ async function applySessionUser(user){
 }
 
 
+
+/* 검색창 누락 시 자동 복구 */
+function ensurePostSearchUI(){
+  const section=$("postSection");
+  const list=$("postList");
+  if(!section||!list||section.querySelector(".post-search"))return;
+
+  const box=document.createElement("div");
+  box.className="post-search";
+  box.innerHTML=`
+    <input id="postSearchInput" type="search" placeholder="🔍 제목이나 내용으로 검색" onkeydown="if(event.key==='Enter')searchPosts()">
+    <select id="postSearchCategory" onchange="searchPosts()">
+      <option value="">전체 카테고리</option>
+      <option value="오늘의 고충">🔥 오늘의 고충</option>
+      <option value="웃픈 장사썰">😂 웃픈 장사썰</option>
+      <option value="사장님 하소연">😭 사장님 하소연</option>
+      <option value="장사 노하우">💡 장사 노하우</option>
+      <option value="사장님 위로">❤️ 사장님 위로</option>
+      <option value="자유게시판">🗣️ 자유게시판</option>
+    </select>
+    <select id="postSearchBusinessType" onchange="searchPosts()">
+      <option value="">전체 업종</option>
+      <option value="꽃집">🌸 꽃집</option>
+      <option value="식당">🍚 식당</option>
+      <option value="카페">☕ 카페</option>
+      <option value="의류">👕 의류</option>
+      <option value="미용">💇 미용</option>
+      <option value="소매">🛍️ 소매</option>
+      <option value="온라인">💻 온라인</option>
+      <option value="서비스">🛠️ 서비스</option>
+      <option value="기타">📦 기타</option>
+    </select>
+    <button type="button" onclick="searchPosts()">검색</button>
+    <button type="button" onclick="resetPostSearch()">초기화</button>
+  `;
+  section.insertBefore(box,list);
+}
+
+/* 카테고리 버튼 클릭 기능 자동 복구 */
+function ensureCategoryButtons(){
+  const categories = [
+    "오늘의 고충",
+    "웃픈 장사썰",
+    "사장님 하소연",
+    "장사 노하우",
+    "사장님 위로",
+    "자유게시판"
+  ];
+
+  document.querySelectorAll(".category-grid button").forEach((btn, i) => {
+    if(i >= categories.length) return;
+    btn.type = "button";
+    btn.onclick = function(){
+      filterByCategory(categories[i]);
+    };
+  });
+}
+
 /* ==================================================
    USER UI
 ================================================== */
 
 function updateUserUI(){
-  const postSection=$("postSection");
+  ensurePostSearchUI();
+  ensureCategoryButtons();
+
+  // 기존 updateUserUI() 내용은 그대로 유지
 
   // 게시글 목록은 로그인하지 않아도 표시
   if(postSection){
