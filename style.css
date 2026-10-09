@@ -879,3 +879,14 @@ button{cursor:pointer}
   line-height:1 !important;
   vertical-align:middle;
 }
+
+
+/* ==========================================
+   게시글 검색 및 필터
+========================================== */
+.post-search{display:grid;grid-template-columns:minmax(180px,2fr) minmax(140px,1fr) minmax(120px,1fr) auto auto;gap:8px;margin:20px 0}
+.post-search input,.post-search select{width:100%;min-width:0;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#222}
+.post-search button{padding:10px 14px;border:1px solid #ddd;border-radius:10px;background:#f8f8f8;font-weight:700}
+.post-search button:hover,.category-grid button:hover{background:#eee}
+@media(max-width:760px){.post-search{grid-template-columns:1fr 1fr}.post-search input{grid-column:1/-1}.post-search button{width:100%}}
+@media(max-width:420px){.post-search{grid-template-columns:1fr}.post-search input{grid-column:auto}}

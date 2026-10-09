@@ -614,63 +614,72 @@ async function createPost(){
   }
 }
 
+
 /* ==================================================
-   POST : 게시글 목록 조회
+   POST : 게시글 목록 및 검색
 ================================================== */
-
 async function loadPosts(){
-  console.log("게시글 목록 조회 함수 실행됨");
+  await searchPosts();
+}
 
+async function searchPosts(){
   const postList=$("postList");
-
   if(!postList)return;
+
+  const keyword=$("postSearchInput")?.value.trim()||"";
+  const category=$("postSearchCategory")?.value||"";
+  const businessType=$("postSearchBusinessType")?.value||"";
 
   postList.innerHTML='<div class="post-loading">게시글을 불러오는 중입니다...</div>';
 
   try{
-    const {data,error}=await supabaseClient
+    let query=supabaseClient
       .from("posts")
-      .select(`
-        id,
-        category,
-        business_type,
-        title,
-        content,
-        is_anonymous,
-        view_count,
-        created_at
-      `)
-      .eq("status","ACTIVE")
+      .select("id,category,business_type,title,content,is_anonymous,view_count,created_at")
+      .eq("status","ACTIVE");
+
+    if(category)query=query.eq("category",category);
+    if(businessType)query=query.eq("business_type",businessType);
+
+    if(keyword){
+      // 검색 필터 문법에 영향을 주는 문자는 제거하고 검색
+      const safeKeyword=keyword.replace(/[,%()]/g," ").trim();
+      if(safeKeyword){
+        query=query.or(`title.ilike.%${safeKeyword}%,content.ilike.%${safeKeyword}%`);
+      }
+    }
+
+    const {data,error}=await query
       .order("created_at",{ascending:false})
-      .limit(20);
+      .limit(100);
 
     if(error){
-      console.error("게시글 목록 조회 오류:",error);
-      postList.innerHTML='<div class="post-empty">게시글을 불러오지 못했습니다.</div>';
+      console.error("게시글 검색 오류:",error);
+      postList.innerHTML='<div class="post-empty">게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
       return;
     }
 
     if(!data||data.length===0){
-      postList.innerHTML='<div class="post-empty">아직 등록된 이야기가 없습니다.</div>';
+      postList.innerHTML='<div class="post-empty">검색 결과가 없습니다.</div>';
       return;
     }
 
     postList.innerHTML=data.map(post=>{
-      const category=escapePostText(post.category||"");
-      const businessType=escapePostText(post.business_type||"");
-      const title=escapePostText(post.title||"");
-      const content=escapePostText(post.content||"");
+      const safeCategory=escapePostText(post.category||"");
+      const safeBusinessType=escapePostText(post.business_type||"");
+      const safeTitle=escapePostText(post.title||"");
+      const safeContent=escapePostText(post.content||"");
       const date=formatPostDate(post.created_at);
       const author=post.is_anonymous?"익명 사장님":"사장님";
 
       return `
         <article class="post-card" onclick="openPostDetail(${post.id})">
           <div class="post-card-top">
-            <span class="post-category">${category}</span>
-            <span class="post-business-type">${businessType}</span>
+            <span class="post-category">${safeCategory}</span>
+            <span class="post-business-type">${safeBusinessType}</span>
           </div>
-          <h3 class="post-title">${title}</h3>
-          <p class="post-preview">${content}</p>
+          <h3 class="post-title">${safeTitle}</h3>
+          <p class="post-preview">${safeContent}</p>
           <div class="post-card-bottom">
             <span>${author}</span>
             <span>👁️ ${post.view_count||0}</span>
@@ -679,10 +688,35 @@ async function loadPosts(){
         </article>
       `;
     }).join("");
+
   }catch(error){
-    console.error("게시글 목록 예외:",error);
-    postList.innerHTML='<div class="post-empty">게시글을 불러오지 못했습니다.</div>';
+    console.error("게시글 검색 예외:",error);
+    postList.innerHTML='<div class="post-empty">검색 중 오류가 발생했습니다.</div>';
   }
+}
+
+/* 카테고리 버튼을 누르면 게시글 목록으로 이동해 필터 적용 */
+function filterByCategory(category){
+  const categoryInput=$("postSearchCategory");
+  if(categoryInput)categoryInput.value=category;
+
+  const postSection=$("postSection");
+  if(postSection)postSection.scrollIntoView({behavior:"smooth",block:"start"});
+
+  searchPosts();
+}
+
+/* 검색 조건 초기화 */
+function resetPostSearch(){
+  if($("postSearchInput"))$("postSearchInput").value="";
+  if($("postSearchCategory"))$("postSearchCategory").value="";
+  if($("postSearchBusinessType"))$("postSearchBusinessType").value="";
+  searchPosts();
+}
+
+/* 기존 목록 새로고침용 함수와 호환 */
+function refreshPosts(){
+  searchPosts();
 }
 
 /* ==================================================
