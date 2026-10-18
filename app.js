@@ -74,7 +74,7 @@ async function getProfile(user){
   try{
     const {data,error}=await supabaseClient
       .from("profiles")
-      .select("id,nickname,business_type,role,status")
+      .select("id,nickname,business_type,introduction,role,status")
       .eq("id",user.id)
       .maybeSingle();
 
@@ -109,6 +109,7 @@ async function applySessionUser(user){
     email:user.email||"",
     nickname:profile?.nickname||user.user_metadata?.nickname||"사장님",
     business_type:profile?.business_type||user.user_metadata?.business_type||"업종 미등록",
+    introduction:profile?.introduction||"",
     role:profile?.role||"USER",
     status:profile?.status||"ACTIVE"
   };
@@ -540,6 +541,106 @@ document.addEventListener("DOMContentLoaded",async function(){
   createSocialSignupButtons();
   await restoreSession();
 });
+
+/* ==================================================
+   마이페이지 기능
+================================================== */
+function openMyPage(){
+  if(!currentUser){openLoginModal();return;}
+  const section=$("myPageSection");
+  if(section)section.style.display="block";
+  if($("mypageNickname"))$("mypageNickname").value=currentUser.nickname||"";
+  if($("mypageBusinessType"))$("mypageBusinessType").value=currentUser.business_type||"";
+  if($("mypageIntroduction"))$("mypageIntroduction").value=currentUser.introduction||"";
+  loadMyPage();
+  if(section)section.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeMyPage(){const section=$("myPageSection");if(section)section.style.display="none";}
+async function loadMyPage(){
+  if(!currentUser)return;
+  const postsBox=$("mypagePosts"),commentsBox=$("mypageComments");
+  if(postsBox)postsBox.innerHTML='<p class="mypage-empty">게시글을 불러오는 중...</p>';
+  if(commentsBox)commentsBox.innerHTML='<p class="mypage-empty">댓글을 불러오는 중...</p>';
+  try{
+    const [pr,cr]=await Promise.all([
+      supabaseClient.from("posts").select("id,category,business_type,title,content,view_count,created_at").eq("user_id",currentUser.id).eq("status","ACTIVE").order("created_at",{ascending:false}).limit(200),
+      supabaseClient.from("comments").select("id,post_id,content,is_anonymous,created_at").eq("user_id",currentUser.id).eq("status","ACTIVE").order("created_at",{ascending:false}).limit(500)
+    ]);
+    if(pr.error)throw pr.error;if(cr.error)throw cr.error;
+    const posts=pr.data||[],comments=cr.data||[];
+    if($("mypagePostCount"))$("mypagePostCount").textContent=String(posts.length);
+    if($("mypageCommentCount"))$("mypageCommentCount").textContent=String(comments.length);
+    if(postsBox)postsBox.innerHTML=posts.length?posts.map(p=>'<article class="mypage-item"><div class="mypage-item-meta"><span>'+escapePostText(p.category||"")+'</span><span>'+formatPostDate(p.created_at)+'</span></div><h4>'+escapePostText(p.title||"")+'</h4><p>'+escapePostText((p.content||"").slice(0,180))+((p.content||"").length>180?"…":"")+'</p><div class="mypage-item-actions"><button type="button" onclick="editMyPostFromPage('+p.id+')">✏️ 수정</button><button type="button" class="mypage-item-delete" onclick="deleteMyPostFromPage('+p.id+')">🗑️ 삭제</button><button type="button" onclick="openPostDetail('+p.id+')">게시글 보기</button></div></article>').join(""):'<p class="mypage-empty">작성한 게시글이 없습니다.</p>';
+    if(comments.length){
+      const ids=[...new Set(comments.map(c=>c.post_id))],titleMap={};
+      if(ids.length){const tr=await supabaseClient.from("posts").select("id,title").in("id",ids);if(!tr.error)(tr.data||[]).forEach(p=>titleMap[p.id]=p.title||"게시글");}
+      if(commentsBox)commentsBox.innerHTML=comments.map(c=>'<article class="mypage-item"><div class="mypage-item-meta"><span>댓글</span><span>'+formatPostDate(c.created_at)+'</span></div><p>'+escapePostText(c.content||"")+'</p><small>게시글: '+escapePostText(titleMap[c.post_id]||"원본 게시글")+'</small><div class="mypage-item-actions"><button type="button" onclick="editMyCommentFromPage('+c.id+')">✏️ 수정</button><button type="button" class="mypage-item-delete" onclick="deleteMyCommentFromPage('+c.id+')">🗑️ 삭제</button><button type="button" onclick="openPostDetail('+c.post_id+')">게시글 보기</button></div></article>').join("");
+    }else if(commentsBox)commentsBox.innerHTML='<p class="mypage-empty">작성한 댓글이 없습니다.</p>';
+  }catch(error){console.error("마이페이지 조회 오류:",error);if(postsBox)postsBox.innerHTML='<p class="mypage-empty">내 게시글을 불러오지 못했습니다. 콘솔과 Supabase 권한을 확인해주세요.</p>';if(commentsBox)commentsBox.innerHTML='<p class="mypage-empty">내 댓글을 불러오지 못했습니다. 콘솔과 Supabase 권한을 확인해주세요.</p>';}
+}
+async function saveMyProfile(){
+  if(!currentUser){openLoginModal();return;}
+  const nickname=$("mypageNickname")?.value.trim()||"",businessType=$("mypageBusinessType")?.value||"",introduction=$("mypageIntroduction")?.value.trim()||"",message=$("mypageProfileMessage");
+  if(!nickname){if(message)message.textContent="닉네임을 입력해주세요.";return;}
+  if(nickname.length>20){if(message)message.textContent="닉네임은 20자 이하로 입력해주세요.";return;}
+  if(introduction.length>300){if(message)message.textContent="소개글은 300자 이하로 입력해주세요.";return;}
+  if(message)message.textContent="저장 중...";
+  try{
+    const {data,error}=await supabaseClient.from("profiles").update({nickname,business_type:businessType||null,introduction}).eq("id",currentUser.id).select("id,nickname,business_type,introduction").maybeSingle();
+    if(error)throw error;if(!data)throw new Error("프로필을 수정할 수 없습니다. 본인 프로필 RLS 정책을 확인해주세요.");
+    currentUser={...currentUser,nickname:data.nickname,business_type:data.business_type||"",introduction:data.introduction||""};localStorage.setItem("sajangnim_user",JSON.stringify(currentUser));updateUserUI();if(message)message.textContent="프로필이 저장되었습니다.";
+  }catch(error){console.error("프로필 저장 오류:",error);if(message)message.textContent=error.message?.includes("introduction")?"소개글 열 설정이 필요합니다. 안내된 Supabase SQL을 먼저 실행해주세요.":"프로필 저장에 실패했습니다. Supabase 권한과 SQL 설정을 확인해주세요.";}
+}
+async function editMyPostFromPage(postId){
+  if(!currentUser)return;
+  try{
+    const {data:p,error:fe}=await supabaseClient.from("posts").select("id,title,content").eq("id",postId).eq("user_id",currentUser.id).eq("status","ACTIVE").maybeSingle();
+    if(fe)throw fe;if(!p){alert("본인이 작성한 게시글을 찾을 수 없습니다.");return;}
+    const title=prompt("수정할 제목을 입력하세요.",p.title||"");if(title===null)return;
+    const content=prompt("수정할 내용을 입력하세요.",p.content||"");if(content===null)return;
+    if(title.trim().length<2||title.trim().length>100){alert("제목은 2~100자로 입력해주세요.");return;}
+    if(content.trim().length<5){alert("내용은 5자 이상 입력해주세요.");return;}
+    const {data,error}=await supabaseClient.from("posts").update({title:title.trim(),content:content.trim(),updated_at:new Date().toISOString()}).eq("id",postId).eq("user_id",currentUser.id).eq("status","ACTIVE").select("id").maybeSingle();
+    if(error)throw error;if(!data){alert("게시글을 수정할 수 없습니다. 권한을 확인해주세요.");return;}alert("게시글이 수정되었습니다.");await Promise.all([loadMyPage(),loadPosts()]);
+  }catch(error){console.error("내 게시글 수정 오류:",error);alert("게시글 수정에 실패했습니다. 잠시 후 다시 시도해주세요.");}
+}
+async function deleteMyPostFromPage(postId){
+  if(!currentUser)return;if(!confirm("이 게시글을 삭제할까요? 일반 목록에서 숨겨집니다."))return;
+  try{const {data,error}=await supabaseClient.from("posts").update({status:"DELETED"}).eq("id",postId).eq("user_id",currentUser.id).eq("status","ACTIVE").select("id").maybeSingle();if(error)throw error;if(!data){alert("게시글을 삭제할 수 없습니다. 본인 게시글인지 확인해주세요.");return;}if(Number(currentPostId)===Number(postId))closePostDetail();alert("게시글이 삭제되었습니다.");await Promise.all([loadMyPage(),loadPosts()]);}
+  catch(error){console.error("내 게시글 삭제 오류:",error);alert("게시글 삭제에 실패했습니다. Supabase 권한을 확인해주세요.");}
+}
+async function editMyCommentFromPage(commentId){
+  if(!currentUser)return;
+  try{
+    const {data:c,error:fe}=await supabaseClient.from("comments").select("id,content").eq("id",commentId).eq("user_id",currentUser.id).eq("status","ACTIVE").maybeSingle();
+    if(fe)throw fe;if(!c){alert("본인이 작성한 댓글을 찾을 수 없습니다.");return;}
+    const answer=prompt("수정할 댓글 내용을 입력해주세요.",c.content||"");if(answer===null)return;const content=answer.trim();
+    if(content.length<2||content.length>1000){alert("댓글은 2~1000자로 입력해주세요.");return;}
+    const {data,error}=await supabaseClient.from("comments").update({content}).eq("id",commentId).eq("user_id",currentUser.id).eq("status","ACTIVE").select("id").maybeSingle();
+    if(error)throw error;if(!data){alert("댓글을 수정할 수 없습니다. 권한을 확인해주세요.");return;}alert("댓글이 수정되었습니다.");await Promise.all([loadMyPage(),currentPostId?loadComments(currentPostId):Promise.resolve()]);
+  }catch(error){console.error("내 댓글 수정 오류:",error);alert("댓글 수정에 실패했습니다. Supabase 권한을 확인해주세요.");}
+}
+async function deleteMyCommentFromPage(commentId){
+  if(!currentUser)return;if(!confirm("이 댓글을 삭제할까요?"))return;
+  try{const {data,error}=await supabaseClient.from("comments").update({status:"DELETED"}).eq("id",commentId).eq("user_id",currentUser.id).eq("status","ACTIVE").select("id").maybeSingle();if(error)throw error;if(!data){alert("댓글을 삭제할 수 없습니다. 본인 댓글인지 확인해주세요.");return;}alert("댓글이 삭제되었습니다.");await Promise.all([loadMyPage(),currentPostId?loadComments(currentPostId):Promise.resolve()]);}
+  catch(error){console.error("내 댓글 삭제 오류:",error);alert("댓글 삭제에 실패했습니다. Supabase 권한을 확인해주세요.");}
+}
+async function changeMyPassword(){
+  if(!currentUser){openLoginModal();return;}
+  const password=$("mypageNewPassword")?.value||"",confirmPassword=$("mypageConfirmPassword")?.value||"",message=$("mypagePasswordMessage");
+  if(password.length<6){if(message)message.textContent="새 비밀번호는 6자 이상이어야 합니다.";return;}
+  if(password!==confirmPassword){if(message)message.textContent="두 비밀번호가 일치하지 않습니다.";return;}
+  if(message)message.textContent="비밀번호 변경 중...";
+  try{const {error}=await supabaseClient.auth.updateUser({password});if(error)throw error;$("mypageNewPassword").value="";$("mypageConfirmPassword").value="";if(message)message.textContent="비밀번호가 변경되었습니다.";}
+  catch(error){console.error("비밀번호 변경 오류:",error);if(message)message.textContent="비밀번호 변경에 실패했습니다. 다시 로그인한 뒤 시도해주세요.";}
+}
+async function deleteMyAccount(){
+  if(!currentUser){openLoginModal();return;}
+  const phrase=prompt("회원 탈퇴를 진행하려면 '탈퇴'를 입력해주세요. 탈퇴 후에는 되돌릴 수 없습니다.");if(phrase!=="탈퇴")return;
+  if(!confirm("정말 탈퇴하시겠습니까? 계정 삭제 요청을 진행합니다."))return;
+  try{const {error}=await supabaseClient.rpc("delete_my_account");if(error)throw error;await supabaseClient.auth.signOut();currentUser=null;localStorage.removeItem("sajangnim_user");closeMyPage();updateUserUI();alert("회원 탈퇴가 완료되었습니다.");}
+  catch(error){console.error("회원 탈퇴 오류:",error);alert("회원 탈퇴 설정이 완료되지 않았거나 처리에 실패했습니다. 안내된 Supabase SQL을 먼저 실행하고 다시 시도해주세요.");}
+}
 
 /* ==================================================
    POST : 게시글 작성 모달
