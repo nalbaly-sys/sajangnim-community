@@ -154,7 +154,25 @@
       <div id="userBusinessType">
         업종
       </div>
+      <div class="user-info-actions"><button type="button" class="mypage-open-button" onclick="openMyPage()">👤 마이페이지</button></div>
+    </section>
 
+    <!-- MY PAGE -->
+    <section id="myPageSection" class="mypage-section" style="display:none;">
+      <div class="mypage-heading"><div><h2>👤 마이페이지</h2><p>내 정보와 사장님 커뮤니티 활동을 관리하세요.</p></div><button type="button" class="mypage-close-button" onclick="closeMyPage()">닫기</button></div>
+      <div class="mypage-panel">
+        <h3>내 프로필</h3>
+        <label for="mypageNickname">닉네임</label><input id="mypageNickname" type="text" maxlength="20" placeholder="닉네임">
+        <label for="mypageBusinessType">업종</label>
+        <select id="mypageBusinessType"><option value="">업종을 선택하세요</option><option value="꽃집">🌸 꽃집</option><option value="식당">🍚 식당</option><option value="카페">☕ 카페</option><option value="의류">👕 의류</option><option value="미용">💇 미용</option><option value="소매">🛍️ 소매</option><option value="온라인">💻 온라인</option><option value="서비스">🛠️ 서비스</option><option value="기타">📦 기타</option></select>
+        <label for="mypageIntroduction">소개글</label><textarea id="mypageIntroduction" rows="3" maxlength="300" placeholder="사장님을 소개해주세요. (최대 300자)"></textarea>
+        <button type="button" class="mypage-primary-button" onclick="saveMyProfile()">프로필 저장</button><p id="mypageProfileMessage" class="mypage-message" aria-live="polite"></p>
+      </div>
+      <div class="mypage-stats"><div class="mypage-stat"><span>내 게시글</span><strong id="mypagePostCount">0</strong></div><div class="mypage-stat"><span>내 댓글</span><strong id="mypageCommentCount">0</strong></div></div>
+      <div class="mypage-panel"><div class="mypage-panel-heading"><h3>📝 내가 작성한 게시글</h3><button type="button" onclick="loadMyPage()">새로고침</button></div><div id="mypagePosts" class="mypage-list"><p class="mypage-empty">불러오는 중...</p></div></div>
+      <div class="mypage-panel"><div class="mypage-panel-heading"><h3>💬 내가 작성한 댓글</h3><button type="button" onclick="loadMyPage()">새로고침</button></div><div id="mypageComments" class="mypage-list"><p class="mypage-empty">불러오는 중...</p></div></div>
+      <div class="mypage-panel"><h3>🔐 비밀번호 변경</h3><label for="mypageNewPassword">새 비밀번호</label><input id="mypageNewPassword" type="password" minlength="6" autocomplete="new-password" placeholder="6자 이상"><label for="mypageConfirmPassword">새 비밀번호 확인</label><input id="mypageConfirmPassword" type="password" minlength="6" autocomplete="new-password" placeholder="새 비밀번호 다시 입력"><button type="button" class="mypage-primary-button" onclick="changeMyPassword()">비밀번호 변경</button><p id="mypagePasswordMessage" class="mypage-message" aria-live="polite"></p></div>
+      <div class="mypage-panel mypage-danger-panel"><h3>회원 탈퇴</h3><p>탈퇴 기능을 사용하려면 아래 Supabase SQL 설정이 먼저 완료되어야 합니다.</p><button type="button" class="mypage-danger-button" onclick="deleteMyAccount()">회원 탈퇴</button></div>
     </section>
 
         <!-- ==========================================
