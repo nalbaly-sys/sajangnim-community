@@ -950,3 +950,40 @@ body.mypage-active .mypage-section{display:block!important;margin:28px auto 60px
   .header-actions{justify-content:center}
   .header-user-info{justify-content:center;order:-1}
 }
+
+
+/* ==========================================
+   9단계 UI 보완: 접근성·모바일 오버플로
+   기존 기능과 색상 체계는 유지하고 사용성만 보완합니다.
+========================================== */
+html,body{max-width:100%;overflow-x:hidden}
+button,input,select,textarea{max-width:100%}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(59,130,246,.55);outline-offset:2px}
+.category-grid button{min-width:0;overflow-wrap:anywhere;transition:transform .15s ease,border-color .15s ease,background-color .15s ease}
+.category-grid button:hover{border-color:#d1d5db;background:#f5f5f5}
+.modal{overflow-y:auto}
+.modal-box{max-height:calc(100dvh - 40px);overflow-y:auto}
+#postModal .modal-box{overscroll-behavior:contain}
+.post-section,.mypage-section,.mypage-panel,.mypage-item{min-width:0}
+.mypage-item-meta{flex-wrap:wrap}
+@media(max-width:760px){
+  .main-container{padding-right:14px;padding-left:14px}
+  .post-section{padding:18px}
+  .post-section-header{align-items:flex-start;flex-wrap:wrap}
+  .post-section-header h2{font-size:20px}
+  .post-search{grid-template-columns:minmax(0,1fr)!important}
+  .post-search input,.post-search select,.post-search button{width:100%;min-width:0}
+}
+@media(max-width:480px){
+  .hero h1{font-size:clamp(38px,12vw,54px)}
+  .hero-sub{font-size:14px!important}
+  .post-section{padding:14px}
+  .modal{padding:10px}
+  .modal-box{max-height:calc(100dvh - 20px);padding:22px 16px}
+  .mypage-heading{align-items:flex-start}
+  .mypage-heading p{line-height:1.5}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
