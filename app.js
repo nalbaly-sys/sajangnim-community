@@ -1863,7 +1863,10 @@ function ensureAdminPanel(){
 function openAdminPanel(){
   if(!currentUser){openLoginModal();return;}
   if(!isAdminUser()){alert("관리자 권한이 필요합니다.");return;}
-  ensureAdminPanel();const section=$("adminPanelSection");if(section)section.style.display="block";
+  ensureAdminPanel();
+  /* 마이페이지 전용 CSS가 관리자 화면까지 숨기지 않도록 먼저 해제 */
+  document.body.classList.remove("mypage-active");
+  const section=$("adminPanelSection");if(section)section.style.display="block";
   const mypage=$("myPageSection");if(mypage)mypage.style.display="none";
   const posts=$("postSection");if(posts)posts.style.display="none";
   document.body.classList.add("admin-active");loadAdminDashboard();loadAdminReports();window.scrollTo({top:0,behavior:"smooth"});
