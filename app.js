@@ -385,6 +385,30 @@ async function loginWithGoogle(){
 }
 
 /* ==================================================
+   KAKAO OAuth
+================================================== */
+
+async function loginWithKakao(){
+  const messageId=$("loginMessage")?"loginMessage":"signupMessage";
+  try{
+    showMessage("카카오 로그인으로 이동합니다...",messageId);
+    const {error}=await supabaseClient.auth.signInWithOAuth({
+      provider:"kakao",
+      options:{
+        redirectTo:window.location.origin+window.location.pathname
+      }
+    });
+    if(error){
+      console.error("카카오 로그인 오류:",error);
+      showMessage("카카오 로그인 오류: "+error.message,messageId);
+    }
+  }catch(error){
+    console.error("카카오 로그인 예외:",error);
+    showMessage("카카오 로그인 중 오류가 발생했습니다.",messageId);
+  }
+}
+
+/* ==================================================
    회원가입 화면
    Google 버튼 자동 생성
 ================================================== */
@@ -425,6 +449,17 @@ function createSocialSignupButtons(){
   googleButton.onclick=loginWithGoogle;
 
   box.appendChild(googleButton);
+
+  const kakaoButton=document.createElement("button");
+  kakaoButton.type="button";
+  kakaoButton.textContent="🟡 카카오로 회원가입";
+  kakaoButton.className="modal-submit";
+  kakaoButton.style.background="#FEE500";
+  kakaoButton.style.color="#191919";
+  kakaoButton.style.border="1px solid #E5CF00";
+  kakaoButton.onclick=loginWithKakao;
+  box.appendChild(kakaoButton);
+
   signupButton.insertAdjacentElement("afterend",box);
 }
 
@@ -469,6 +504,17 @@ function createSocialLoginButtons(){
   googleButton.onclick=loginWithGoogle;
 
   box.appendChild(googleButton);
+
+  const kakaoButton=document.createElement("button");
+  kakaoButton.type="button";
+  kakaoButton.textContent="🟡 카카오로 로그인";
+  kakaoButton.className="modal-submit";
+  kakaoButton.style.background="#FEE500";
+  kakaoButton.style.color="#191919";
+  kakaoButton.style.border="1px solid #E5CF00";
+  kakaoButton.onclick=loginWithKakao;
+  box.appendChild(kakaoButton);
+
   loginButton.insertAdjacentElement("afterend",box);
 }
 
