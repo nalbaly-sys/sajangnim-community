@@ -194,6 +194,11 @@ function updateUserUI(){
 
   const loggedIn=!!currentUser;
 
+  if(!loggedIn){
+    document.body.classList.remove("mypage-active");
+    if($("myPageSection"))$("myPageSection").style.display="none";
+  }
+
   if($("loginButton")){
     $("loginButton").style.display=loggedIn?"none":"inline-block";
   }
