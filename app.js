@@ -184,6 +184,8 @@ function ensureCategoryButtons(){
 function updateUserUI(){
   ensurePostSearchUI();
   ensureCategoryButtons();
+  ensureAdminEntry();
+  ensureAdminPanel();
 
   // 구버전 HTML이 로그인/로그아웃 사이에 남아 있어도 이전 사용자 정보 카드를 제거
   const legacyUserInfo=$("userInfo");
@@ -198,6 +200,8 @@ function updateUserUI(){
   }
 
   const loggedIn=!!currentUser;
+  const adminButton=$("adminPanelButton");
+  if(adminButton)adminButton.style.display=isAdminUser()?"inline-flex":"none";
 
   if(!loggedIn){
     document.body.classList.remove("mypage-active");
