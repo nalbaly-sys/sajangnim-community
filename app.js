@@ -1901,7 +1901,7 @@ async function loadAdminPosts(){
  box.innerHTML=(data||[]).length?data.map(p=>`<article class="admin-item"><div class="admin-item-head"><strong>#${adminEscape(p.id)} · ${adminEscape(p.title)}</strong><span class="admin-status">${adminEscape(p.status)}</span></div><p>${adminEscape(p.category)} · ${adminEscape(p.business_type)} · ${adminEscape(formatPostDate(p.created_at))}</p><small>작성자 ID: ${adminEscape(p.user_id)}</small><div class="admin-item-actions"><button type="button" onclick="adminViewPost('${adminEscape(p.id)}')">게시글 보기</button>${p.status==="ACTIVE"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','HIDDEN')">숨김</button><button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','DELETED')">삭제 처리</button>`:p.status==="HIDDEN"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','ACTIVE')">다시 공개</button><button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','DELETED')">삭제 처리</button>`:p.status==="DELETED"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','ACTIVE')">복구</button>`:""}</div></article>`).join(""):'<p class="admin-empty">게시글이 없습니다.</p>';adminMessage("최근 게시글 최대 100건을 표시합니다.");}
  catch(e){console.error("관리자 게시글 조회 오류:",e);box.innerHTML='<p class="admin-empty">게시글 조회에 실패했습니다.</p>';adminMessage(e.message||"조회 실패");}
 }
-async function adminViewPost(id){if(!isAdminUser())return;closeAdminPanel();await openPostDetail(id);}
+async function adminViewPost(id){if(!isAdminUser())return;await openPostDetail(id);}
 async function loadAdminComments(){
  if(!isAdminUser())return;adminMessage("댓글을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
  try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,user_id,content,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
@@ -1931,18 +1931,33 @@ async function openAdminMemberDetail(userId){
  if(!isAdminUser())return;const box=$("adminMemberDetail"),list=$("adminPanelContent");if(!box)return;
  box.style.display="block";if(list)list.style.display="none";box.innerHTML='<p>회원 활동 정보를 불러오는 중...</p>';
  try{
-  const [pr,po,co,re,rep]=await Promise.all([
+  const [pr,po,co,re]=await Promise.all([
    supabaseClient.from("profiles").select("id,nickname,business_type,introduction,role,status").eq("id",userId).maybeSingle(),
-   supabaseClient.from("posts").select("id,title,status,created_at").eq("user_id",userId),
-   supabaseClient.from("comments").select("id,status").eq("user_id",userId),
-   supabaseClient.from("reactions").select("id").eq("user_id",userId),
-   supabaseClient.from("reports").select("id").eq("target_type","POST").in("target_id",[])
+   supabaseClient.from("posts").select("id,title,status,created_at").eq("user_id",userId).order("created_at",{ascending:false}),
+   supabaseClient.from("comments").select("id,post_id,content,status,created_at").eq("user_id",userId).order("created_at",{ascending:false}),
+   supabaseClient.from("reactions").select("id,reaction_type,post_id,created_at").eq("user_id",userId).order("created_at",{ascending:false})
   ]);
   if(pr.error)throw pr.error;if(po.error)throw po.error;if(co.error)throw co.error;if(re.error)throw re.error;
   const profile=pr.data;if(!profile)throw new Error("회원 프로필을 찾을 수 없습니다.");
-  let reportedCount="확인 불가";try{const ids=(po.data||[]).map(p=>p.id);if(ids.length){const rr=await supabaseClient.from("reports").select("id").eq("target_type","POST").in("target_id",ids);if(!rr.error)reportedCount=(rr.data||[]).length;}else reportedCount=0;}catch(_){}
-  box.innerHTML=`<div class="admin-member-detail-head"><button type="button" onclick="backToAdminMembers()">← 회원 목록</button><div><h3>${adminEscape(profile.nickname||"닉네임 미설정")}</h3><p>${adminEscape(profile.id)}</p></div></div><div class="admin-member-detail-grid"><article><span>게시글</span><strong>${(po.data||[]).length}</strong></article><article><span>댓글</span><strong>${(co.data||[]).length}</strong></article><article><span>감정/공감 활동</span><strong>${(re.data||[]).length}</strong></article><article><span>본인 게시글 신고 수</span><strong>${reportedCount}</strong></article></div><div class="admin-member-profile"><p><b>업종:</b> ${adminEscape(profile.business_type||"미등록")}</p><p><b>소개:</b> ${adminEscape(profile.introduction||"없음")}</p><p><b>역할:</b> ${adminEscape(profile.role||"USER")}　<b>상태:</b> ${adminEscape(profile.status||"미확인")}</p></div><h4>최근 게시글</h4><div class="admin-member-posts">${(po.data||[]).slice(0,20).map(p=>`<div><span>#${adminEscape(p.id)} · ${adminEscape(p.title||"제목 없음")} · ${adminEscape(p.status)}</span><button type="button" onclick="adminViewPost('${adminEscape(p.id)}')">보기</button></div>`).join("")||"<p>게시글이 없습니다.</p>"}</div><div class="admin-danger-note"><b>강제 탈퇴</b><p>계정의 실제 탈퇴 처리는 Supabase Auth 사용자 삭제와 개인정보 처리까지 포함하므로 브라우저에서 직접 실행하지 않습니다. 보안 단계에서 서버 측 관리자 전용 기능으로 연결해야 합니다.</p></div>`;
-  adminMessage("회원 활동 정보를 표시했습니다. 신고 수는 게시글 신고 기준이며 reports 권한이 없으면 확인 불가로 표시됩니다.");
+  const posts=po.data||[],comments=co.data||[],reactions=re.data||[];
+  const reactionCounts={"공감":0,"웃김":0,"나도 겪음":0,"열받음":0,"힘내세요":0};
+  reactions.forEach(row=>{if(Object.prototype.hasOwnProperty.call(reactionCounts,row.reaction_type))reactionCounts[row.reaction_type]++;});
+  let postReportCount="확인 불가",commentReportCount="확인 불가";
+  try{
+   const postIds=posts.map(p=>p.id),commentIds=comments.map(c=>c.id);
+   if(postIds.length){const rr=await supabaseClient.from("reports").select("id").eq("target_type","POST").in("target_id",postIds);if(!rr.error)postReportCount=(rr.data||[]).length;}
+   else postReportCount=0;
+   if(commentIds.length){const rr=await supabaseClient.from("reports").select("id").eq("target_type","COMMENT").in("target_id",commentIds);if(!rr.error)commentReportCount=(rr.data||[]).length;}
+   else commentReportCount=0;
+  }catch(e){console.warn("회원 신고 수 조회 권한 확인 필요:",e);}
+  box.innerHTML=`<div class="admin-member-detail-head"><button type="button" onclick="backToAdminMembers()">← 회원 목록</button><div><h3>${adminEscape(profile.nickname||"닉네임 미설정")}</h3><p>${adminEscape(profile.id)}</p></div></div>
+  <div class="admin-member-detail-grid"><article><span>게시글</span><strong>${posts.length}</strong></article><article><span>댓글</span><strong>${comments.length}</strong></article><article><span>감정/공감 활동</span><strong>${reactions.length}</strong></article><article><span>본인 게시글 신고 수</span><strong>${postReportCount}</strong></article><article><span>댓글 신고 수</span><strong>${commentReportCount}</strong></article></div>
+  <div class="admin-member-profile"><p><b>업종:</b> ${adminEscape(profile.business_type||"미등록")}</p><p><b>소개:</b> ${adminEscape(profile.introduction||"없음")}</p><p><b>역할:</b> ${adminEscape(profile.role||"USER")}　<b>상태:</b> ${adminEscape(profile.status||"미확인")}</p></div>
+  <h4>감정/공감 활동 합계</h4><div class="admin-reaction-totals"><div>❤️ 공감 <strong>${reactionCounts["공감"]}</strong></div><div>😂 웃김 <strong>${reactionCounts["웃김"]}</strong></div><div>😭 나도 겪음 <strong>${reactionCounts["나도 겪음"]}</strong></div><div>😡 열받음 <strong>${reactionCounts["열받음"]}</strong></div><div>💪 힘내세요 <strong>${reactionCounts["힘내세요"]}</strong></div></div>
+  <h4>최근 게시글</h4><div class="admin-member-posts">${posts.slice(0,20).map(p=>`<div><span>#${adminEscape(p.id)} · ${adminEscape(p.title||"제목 없음")} · ${adminEscape(p.status)} · ${adminEscape(formatPostDate(p.created_at))}</span><button type="button" onclick="adminViewPost('${adminEscape(p.id)}')">보기</button></div>`).join("")||"<p>게시글이 없습니다.</p>"}</div>
+  <h4>최근 댓글</h4><div class="admin-member-posts">${comments.slice(0,20).map(c=>`<div><span>#${adminEscape(c.id)} · 게시글 #${adminEscape(c.post_id)} · ${adminEscape(c.content)} · ${adminEscape(c.status)} · ${adminEscape(formatPostDate(c.created_at))}</span><button type="button" onclick="adminViewPost('${adminEscape(c.post_id)}')">원본 보기</button></div>`).join("")||"<p>댓글이 없습니다.</p>"}</div>
+  <div class="admin-danger-note"><b>강제 탈퇴</b><p>계정의 실제 탈퇴 처리는 Supabase Auth 사용자 삭제와 개인정보 처리까지 포함하므로 브라우저에서 직접 실행하지 않습니다. 보안 단계에서 서버 측 관리자 전용 기능으로 연결해야 합니다.</p></div>`;
+  adminMessage("회원 상세 정보를 표시했습니다. 신고 수는 reports 테이블 권한에 따라 확인 불가로 표시될 수 있습니다.");
  }catch(e){console.error("회원 상세 조회 실패:",e);box.innerHTML='<div class="admin-error"><p>회원 활동 정보를 모두 불러오지 못했습니다.</p><code>'+adminEscape(e.message||"조회 실패")+'</code><button type="button" onclick="backToAdminMembers()">회원 목록으로</button></div>';adminMessage("회원 상세 조회 실패: "+(e.message||"권한 확인 필요"));}
 }
 function backToAdminMembers(){const box=$("adminMemberDetail"),list=$("adminPanelContent");if(box)box.style.display="none";if(list)list.style.display="grid";switchAdminTab("members");}
