@@ -1837,3 +1837,82 @@ if(!report) return;
   }
 }
 
+
+
+/* ==================================================
+   STEP 10: 관리자 시스템 (UI + 기본 관리 기능)
+   참고: 실제 권한 보안은 STEP 11 RLS에서 반드시 검증
+================================================== */
+function isAdminUser(){return !!currentUser&&currentUser.status==="ACTIVE"&&["ADMIN","MODERATOR"].includes(String(currentUser.role||"").toUpperCase());}
+function ensureAdminEntry(){
+  const actions=document.querySelector(".header-actions")||document.querySelector("header")||document.querySelector(".header");
+  if(!actions||$("adminPanelButton"))return;
+  const btn=document.createElement("button");btn.id="adminPanelButton";btn.type="button";btn.className="header-button";btn.textContent="🛡️ 관리자";btn.style.display="none";btn.onclick=openAdminPanel;actions.appendChild(btn);
+}
+function ensureAdminPanel(){
+  if($("adminPanelSection"))return;
+  const main=document.querySelector("main")||document.body;
+  const section=document.createElement("section");section.id="adminPanelSection";section.className="admin-panel-section";section.style.display="none";
+  section.innerHTML=`<div class="admin-panel-heading"><div><p class="admin-eyebrow">ADMIN CONTROL</p><h2>🛡️ 관리자 대시보드</h2><p>신고와 게시글·댓글을 확인하고 커뮤니티 운영 상태를 관리합니다.</p></div><button type="button" onclick="closeAdminPanel()">닫기</button></div><div class="admin-stat-grid"><article><span>대기 신고</span><strong id="adminPendingCount">-</strong></article><article><span>활성 게시글</span><strong id="adminActivePosts">-</strong></article><article><span>활성 댓글</span><strong id="adminActiveComments">-</strong></article><article><span>회원 수</span><strong id="adminMemberCount">-</strong></article></div><div class="admin-tabs"><button type="button" class="active" onclick="loadAdminReports()">🚨 신고 관리</button><button type="button" onclick="loadAdminPosts()">📝 게시글 관리</button><button type="button" onclick="loadAdminComments()">💬 댓글 관리</button><button type="button" onclick="loadAdminMembers()">👥 회원 목록</button></div><div id="adminPanelMessage" class="admin-message" role="status"></div><div id="adminPanelContent" class="admin-panel-content"><p>관리 메뉴를 선택해주세요.</p></div>`;
+  const mypage=$("myPageSection");if(mypage&&mypage.parentNode===main)main.insertBefore(section,mypage);else main.appendChild(section);
+}
+function openAdminPanel(){
+  if(!currentUser){openLoginModal();return;}
+  if(!isAdminUser()){alert("관리자 권한이 필요합니다.");return;}
+  ensureAdminPanel();const section=$("adminPanelSection");if(section)section.style.display="block";
+  const mypage=$("myPageSection");if(mypage)mypage.style.display="none";
+  const posts=$("postSection");if(posts)posts.style.display="none";
+  document.body.classList.add("admin-active");loadAdminDashboard();loadAdminReports();window.scrollTo({top:0,behavior:"smooth"});
+}
+function closeAdminPanel(){const section=$("adminPanelSection");if(section)section.style.display="none";document.body.classList.remove("admin-active");const posts=$("postSection");if(posts)posts.style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
+function adminMessage(text){const el=$("adminPanelMessage");if(el)el.textContent=text||"";}
+function adminEscape(value){return escapePostText(value==null?"":String(value));}
+async function loadAdminDashboard(){
+ if(!isAdminUser())return;
+ const jobs=[
+  ["reports","select","id",{count:"adminPendingCount",filter:q=>q.eq("status","PENDING")}],
+  ["posts","select","id",{count:"adminActivePosts",filter:q=>q.eq("status","ACTIVE")}],
+  ["comments","select","id",{count:"adminActiveComments",filter:q=>q.eq("status","ACTIVE")}],
+  ["profiles","select","id",{count:"adminMemberCount",filter:q=>q}]
+ ];
+ for(const [table,method,fields,config] of jobs){try{let q=supabaseClient.from(table).select(fields,{count:"exact",head:true});if(config.filter)q=config.filter(q);const {count,error}=await q;if(error)throw error;const el=$(config.count);if(el)el.textContent=String(count??0);}catch(e){console.warn("관리자 통계 조회 실패:",table,e);const el=$(config.count);if(el)el.textContent="확인 불가";}}
+}
+async function loadAdminReports(){
+ if(!isAdminUser())return;adminMessage("신고 목록을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
+ try{const {data,error}=await supabaseClient.from("reports").select("id,target_type,target_id,reporter_id,reason,detail,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
+ if(!data||!data.length){box.innerHTML='<p class="admin-empty">접수된 신고가 없습니다.</p>';adminMessage("");return;}
+ box.innerHTML=data.map(r=>`<article class="admin-item"><div class="admin-item-head"><strong>신고 #${adminEscape(r.id)} · ${adminEscape(r.target_type)}</strong><span class="admin-status">${adminEscape(r.status)}</span></div><p><b>대상 ID:</b> ${adminEscape(r.target_id)} · <b>사유:</b> ${adminEscape(r.reason)}</p><p><b>추가 설명:</b> ${adminEscape(r.detail||"없음")}</p><small>신고자: ${adminEscape(r.reporter_id)} · ${adminEscape(formatPostDate(r.created_at))}</small><div class="admin-item-actions">${r.status==="PENDING"?`<button type="button" onclick="setReportStatus(${Number(r.id)},'RESOLVED')">처리 완료</button><button type="button" onclick="setReportStatus(${Number(r.id)},'REJECTED')">신고 기각</button>`:""}<button type="button" onclick="adminOpenTarget('${adminEscape(r.target_type)}',${Number(r.target_id)})">대상 확인</button></div></article>`).join("");adminMessage("최근 신고 최대 100건을 표시합니다.");await loadAdminDashboard();
+ }catch(e){console.error("관리자 신고 조회 오류:",e);box.innerHTML='<p class="admin-empty">신고 목록을 불러오지 못했습니다. reports 테이블 컬럼과 Supabase 권한을 확인해주세요.</p>';adminMessage("조회 실패: "+(e.message||"권한 또는 테이블 설정 확인 필요"));}
+}
+async function setReportStatus(id,status){
+ if(!isAdminUser()||!["RESOLVED","REJECTED"].includes(status))return;
+ if(!confirm(status==="RESOLVED"?"이 신고를 처리 완료로 변경할까요?":"이 신고를 기각할까요?"))return;
+ try{const {data,error}=await supabaseClient.from("reports").update({status}).eq("id",id).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("수정된 행이 없습니다. RLS 권한을 확인해주세요.");adminMessage("신고 상태가 변경되었습니다.");await loadAdminReports();}
+ catch(e){console.error("신고 상태 변경 실패:",e);adminMessage("신고 상태 변경 실패: "+(e.message||"권한을 확인해주세요."));}
+}
+async function loadAdminPosts(){
+ if(!isAdminUser())return;adminMessage("게시글을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
+ try{const {data,error}=await supabaseClient.from("posts").select("id,title,category,business_type,status,created_at,user_id").order("created_at",{ascending:false}).limit(100);if(error)throw error;
+ box.innerHTML=(data||[]).length?(data||[]).map(p=>`<article class="admin-item"><div class="admin-item-head"><strong>#${Number(p.id)} · ${adminEscape(p.title)}</strong><span class="admin-status">${adminEscape(p.status)}</span></div><p>${adminEscape(p.category)} · ${adminEscape(p.business_type)} · ${adminEscape(formatPostDate(p.created_at))}</p><small>작성자 ID: ${adminEscape(p.user_id)}</small><div class="admin-item-actions">${p.status==="ACTIVE"?`<button type="button" onclick="setAdminContentStatus('posts',${Number(p.id)},'HIDDEN')">숨김</button><button type="button" onclick="setAdminContentStatus('posts',${Number(p.id)},'DELETED')">삭제 처리</button>`:p.status==="HIDDEN"?`<button type="button" onclick="setAdminContentStatus('posts',${Number(p.id)},'ACTIVE')">다시 공개</button><button type="button" onclick="setAdminContentStatus('posts',${Number(p.id)},'DELETED')">삭제 처리</button>`:""}</div></article>`).join(""):'<p class="admin-empty">게시글이 없습니다.</p>';adminMessage("최근 게시글 최대 100건을 표시합니다.");}
+ catch(e){console.error("관리자 게시글 조회 오류:",e);box.innerHTML='<p class="admin-empty">게시글 조회에 실패했습니다. 권한을 확인해주세요.</p>';adminMessage(e.message||"조회 실패");}
+}
+async function loadAdminComments(){
+ if(!isAdminUser())return;adminMessage("댓글을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
+ try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,user_id,content,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
+ box.innerHTML=(data||[]).length?(data||[]).map(c=>`<article class="admin-item"><div class="admin-item-head"><strong>댓글 #${Number(c.id)} · 게시글 #${Number(c.post_id)}</strong><span class="admin-status">${adminEscape(c.status)}</span></div><p>${adminEscape(c.content)}</p><small>작성자 ID: ${adminEscape(c.user_id)} · ${adminEscape(formatPostDate(c.created_at))}</small><div class="admin-item-actions">${c.status==="ACTIVE"?`<button type="button" onclick="setAdminContentStatus('comments',${Number(c.id)},'HIDDEN')">숨김</button><button type="button" onclick="setAdminContentStatus('comments',${Number(c.id)},'DELETED')">삭제 처리</button>`:c.status==="HIDDEN"?`<button type="button" onclick="setAdminContentStatus('comments',${Number(c.id)},'ACTIVE')">다시 공개</button><button type="button" onclick="setAdminContentStatus('comments',${Number(c.id)},'DELETED')">삭제 처리</button>`:""}</div></article>`).join(""):'<p class="admin-empty">댓글이 없습니다.</p>';adminMessage("최근 댓글 최대 100건을 표시합니다.");}
+ catch(e){console.error("관리자 댓글 조회 오류:",e);box.innerHTML='<p class="admin-empty">댓글 조회에 실패했습니다. 권한을 확인해주세요.</p>';adminMessage(e.message||"조회 실패");}
+}
+async function setAdminContentStatus(table,id,status){
+ if(!isAdminUser()||!["ACTIVE","HIDDEN","DELETED"].includes(status)||!["posts","comments"].includes(table))return;
+ if(!confirm(`${table==="posts"?"게시글":"댓글"} 상태를 ${status}로 변경할까요?`))return;
+ try{const {data,error}=await supabaseClient.from(table).update({status}).eq("id",id).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("수정된 행이 없습니다. RLS 권한을 확인해주세요.");adminMessage("상태가 변경되었습니다.");if(table==="posts")await loadAdminPosts();else await loadAdminComments();await loadAdminDashboard();if(table==="posts")await loadPosts();}
+ catch(e){console.error("관리자 콘텐츠 상태 변경 실패:",e);adminMessage("상태 변경 실패: "+(e.message||"권한을 확인해주세요."));}
+}
+async function loadAdminMembers(){
+ if(!isAdminUser())return;adminMessage("회원 목록을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
+ try{const {data,error}=await supabaseClient.from("profiles").select("id,nickname,business_type,role,status").order("nickname",{ascending:true}).limit(200);if(error)throw error;
+ box.innerHTML=(data||[]).length?(data||[]).map(p=>`<article class="admin-item"><div class="admin-item-head"><strong>${adminEscape(p.nickname||"닉네임 미설정")}</strong><span class="admin-status">${adminEscape(p.role||"USER")}</span></div><p>업종: ${adminEscape(p.business_type||"미등록")} · 계정 상태: ${adminEscape(p.status||"미확인")}</p><small>회원 ID: ${adminEscape(p.id)}</small></article>`).join(""):'<p class="admin-empty">회원이 없습니다.</p>';adminMessage("회원 정보는 읽기 전용으로 표시합니다. 계정 정지 기능은 권한·스키마 검증 후 추가합니다.");}
+ catch(e){console.error("관리자 회원 조회 오류:",e);box.innerHTML='<p class="admin-empty">회원 목록을 불러오지 못했습니다. profiles 권한을 확인해주세요.</p>';adminMessage(e.message||"조회 실패");}
+}
+function adminOpenTarget(type,id){if(!isAdminUser())return;if(type==="POST"){closeAdminPanel();openPostDetail(id);}else if(type==="COMMENT"){loadAdminComments();adminMessage("댓글 대상 ID: "+id+" — 댓글 관리 탭에서 확인해주세요.");}else{adminMessage("지원하지 않는 신고 대상 유형입니다: "+type);}}
+document.addEventListener("DOMContentLoaded",function(){ensureAdminEntry();ensureAdminPanel();});
