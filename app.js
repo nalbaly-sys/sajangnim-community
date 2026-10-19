@@ -4,6 +4,8 @@
 ================================================== */
 
 let currentUser=null;
+let adminReportedTargetType=null;
+let adminReportedTargetId=null;
 let authSubscription=null;
 let currentPostId=null;
 
@@ -1032,7 +1034,6 @@ async function openPostDetail(postId){
         created_at
       `)
       .eq("id",postId)
-      .eq("status","ACTIVE")
       .single();
 
     if(error){
@@ -1045,7 +1046,16 @@ async function openPostDetail(postId){
       $("detailContent").textContent="게시글을 찾을 수 없습니다.";
       return;
     }
-
+    if(post.status!=="ACTIVE"&&!isAdminUser()){
+      $("detailContent").textContent="게시글을 찾을 수 없습니다.";
+      return;
+    }
+    const detailModalContent=modal.querySelector(".post-detail-content")||modal.querySelector(".post-detail-card")||modal.firstElementChild;
+    if(detailModalContent){detailModalContent.style.border=post.status==="HIDDEN"?"3px solid #dc2626":"";detailModalContent.style.background=post.status==="HIDDEN"?"#fff1f2":"";}
+    if(adminReportedTargetType==="POST"&&String(adminReportedTargetId)===String(post.id)){
+      $("detailTitle").textContent="🚨 신고 대상 게시글 · "+(post.title||"");
+      if(detailModalContent){detailModalContent.style.border="4px solid #dc2626";detailModalContent.style.background="#fff1f2";}
+    }
     $("detailCategory").textContent=post.category||"";
     $("detailBusinessType").textContent=post.business_type||"";
     $("detailTitle").textContent=post.title||"";
@@ -1233,11 +1243,12 @@ async function loadComments(postId){
         user_id,
         content,
         is_anonymous,
-        created_at
+        created_at,
+        status
       `)
       .eq("post_id",postId)
-      .eq("status","ACTIVE")
       .order("created_at",{ascending:true});
+    const visibleComments=isAdminUser()?(data||[]):(data||[]).filter(c=>c.status==="ACTIVE");
 
     if(error){
       console.error("댓글 조회 오류:",error);
@@ -1245,12 +1256,12 @@ async function loadComments(postId){
       return;
     }
 
-    if(!data||data.length===0){
+    if(!visibleComments||visibleComments.length===0){
       commentList.innerHTML='<div class="post-empty">아직 댓글이 없습니다.</div>';
       return;
     }
 
-    commentList.innerHTML=data.map(comment=>{
+    commentList.innerHTML=visibleComments.map(comment=>{
       const content=escapePostText(comment.content||"");
       const author=comment.is_anonymous?"익명 사장님":"사장님";
       const date=formatPostDate(comment.created_at);
@@ -1288,8 +1299,11 @@ async function loadComments(postId){
         `
         :"";
 
+      const isReportedTarget=adminReportedTargetType==="COMMENT"&&String(adminReportedTargetId)===String(comment.id);
+      const hiddenAdminComment=isAdminUser()&&comment.status!=="ACTIVE";
       return `
-        <div class="comment-item">
+        <div id="admin-reported-comment-${adminEscape(comment.id)}" class="comment-item${isReportedTarget?" admin-reported-target":""}" style="${isReportedTarget||hiddenAdminComment?"border:3px solid #dc2626;background:#fff1f2;border-radius:12px;padding:12px;margin:10px 0;":""}">
+          ${isReportedTarget?'<strong style="display:block;color:#b91c1c;margin-bottom:8px">🚨 신고 대상 댓글</strong>':""}${hiddenAdminComment?'<strong style="display:block;color:#b91c1c;margin-bottom:8px">숨김 댓글 · 관리자에게만 표시</strong>':""}
           <div class="comment-header">
             <span class="comment-author">${author}</span>
             <span class="comment-date">${date}</span>
@@ -1899,7 +1913,7 @@ async function loadAdminReports(){
    const targetState=r.target_type==="COMMENT"?(comment?comment.status:"대상 확인 불가"):(post?post.status:"대상 확인 불가");
    const parentInfo=r.target_type==="COMMENT"?(comment?"원본 게시글: "+(post?post.title:"제목 조회 불가")+" · 게시글 ID: "+comment.post_id:"댓글 ID: "+targetId):"";
    const supported=["POST","COMMENT"].includes(r.target_type);
-   return `<article class="admin-item"><div class="admin-item-head"><strong>신고 #${adminEscape(r.id)} · ${adminEscape(r.target_type==="POST"?"게시글 신고":r.target_type==="COMMENT"?"댓글 신고":r.target_type)}</strong><span class="admin-status">${adminEscape(r.status)}</span></div><p><b>신고 대상:</b> ${adminEscape(targetTitle)}</p>${parentInfo?`<p><b>${adminEscape(parentInfo)}</b></p>`:""}<p><b>대상 상태:</b> ${adminEscape(targetState)} · <b>대상 ID:</b> ${adminEscape(targetId)}</p><p><b>신고 사유:</b> ${adminEscape(r.reason)}</p><p><b>추가 설명:</b> ${adminEscape(r.detail||"없음")}</p><small>신고자 ID: ${adminEscape(r.reporter_id)} · ${adminEscape(formatPostDate(r.created_at))}</small><div class="admin-item-actions">${r.status==="PENDING"?`<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','REJECTED')">신고 기각</button>${supported&&targetState==="ACTIVE"?`<button type="button" onclick="hideReportedTargetAndResolve('${adminEscape(r.target_type)}','${adminEscape(targetId)}','${adminEscape(r.id)}')">대상 숨김 + 처리 완료</button>`:""}<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','RESOLVED')">처리 완료만</button>`:""}${r.target_type==="POST"?`<button type="button" onclick="adminViewPost('${adminEscape(targetId)}')">게시글 확인</button>`:r.target_type==="COMMENT"&&comment?`<button type="button" onclick="adminViewComment('${adminEscape(targetId)}')">댓글 확인</button>`:""}</div></article>`;
+   return `<article class="admin-item"><div class="admin-item-head"><strong>신고 #${adminEscape(r.id)} · ${adminEscape(r.target_type==="POST"?"게시글 신고":r.target_type==="COMMENT"?"댓글 신고":r.target_type)}</strong><span class="admin-status">${adminEscape(r.status)}</span></div><p><b>신고 대상:</b> ${adminEscape(targetTitle)}</p>${parentInfo?`<p><b>${adminEscape(parentInfo)}</b></p>`:""}<p><b>대상 상태:</b> ${adminEscape(targetState)} · <b>대상 ID:</b> ${adminEscape(targetId)}</p><p><b>신고 사유:</b> ${adminEscape(r.reason)}</p><p><b>추가 설명:</b> ${adminEscape(r.detail||"없음")}</p><small>신고자 ID: ${adminEscape(r.reporter_id)} · ${adminEscape(formatPostDate(r.created_at))}</small><div class="admin-item-actions">${r.status==="PENDING"?`<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','REJECTED')">신고 기각</button>${supported&&targetState==="ACTIVE"?`<button type="button" onclick="hideReportedTargetAndResolve('${adminEscape(r.target_type)}','${adminEscape(targetId)}','${adminEscape(r.id)}')">대상 숨김 + 처리 완료</button>`:""}<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','RESOLVED')">처리 완료만</button>`:""}${r.target_type==="POST"?`<button type="button" onclick="adminViewPost('${adminEscape(targetId)}')">게시글 확인</button>${targetState==="HIDDEN"?`<button type="button" onclick="restoreReportedPost('${adminEscape(targetId)}')">다시 공개</button>`:""}`:r.target_type==="COMMENT"&&comment?`<button type="button" onclick="adminViewComment('${adminEscape(targetId)}')">댓글 확인</button>`:""}</div></article>`;
   }).join(""):'<p class="admin-empty">접수된 신고가 없습니다.</p>';
   adminMessage("최근 신고 최대 100건을 표시합니다. 댓글 신고는 댓글 내용과 원본 게시글을 함께 표시합니다.");await loadAdminDashboard();
  }catch(e){console.error("관리자 신고 조회 오류:",e);box.innerHTML='<div class="admin-error"><strong>신고 목록 조회 실패</strong><p>Supabase가 reports 테이블 접근을 거부했거나 신고 데이터 조회 중 오류가 발생했습니다.</p><code>'+adminEscape(e.message||"permission denied")+'</code><p>RLS를 끄거나 공개 정책을 추가하지 마세요.</p></div>';adminMessage("신고 조회 오류: "+(e.message||"권한 오류"));}
@@ -1916,6 +1930,12 @@ async function hideReportedTargetAndResolve(type,targetId,reportId){
   adminMessage("신고 대상 "+label+"을 숨김 처리하고 신고를 처리 완료했습니다.");await loadAdminReports();await loadAdminDashboard();
  }catch(e){console.error("신고 대상 조치 실패:",e);adminMessage("신고 조치 중 오류: "+(e.message||"권한을 확인해주세요."));await loadAdminReports();}
 }
+async function restoreReportedPost(postId){
+ if(!isAdminUser())return;
+ if(!confirm("숨김 처리된 게시글을 다시 공개할까요? 신고 기록과 신고 상태는 그대로 유지됩니다."))return;
+ try{const {data,error}=await supabaseClient.from("posts").update({status:"ACTIVE"}).eq("id",postId).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("게시글을 다시 공개하지 못했습니다. RLS 권한을 확인해주세요.");adminMessage("게시글을 다시 공개했습니다. 신고 기록은 유지됩니다.");await loadAdminReports();await loadAdminDashboard();await loadPosts();}
+ catch(e){console.error("신고 게시글 재공개 실패:",e);adminMessage("다시 공개 실패: "+(e.message||"권한을 확인해주세요."));}
+}
 async function setReportStatus(id,status){
  if(!isAdminUser()||!["RESOLVED","REJECTED"].includes(status))return;if(!confirm(status==="RESOLVED"?"이 신고를 처리 완료로 변경할까요?":"이 신고를 기각할까요?"))return;
  try{const {data,error}=await supabaseClient.from("reports").update({status}).eq("id",id).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("수정된 행이 없습니다. RLS 권한을 확인해주세요.");adminMessage("신고 상태가 변경되었습니다.");await loadAdminReports();}
@@ -1927,7 +1947,7 @@ async function loadAdminPosts(){
  box.innerHTML=(data||[]).length?data.map(p=>`<article class="admin-item"><div class="admin-item-head"><strong>#${adminEscape(p.id)} · ${adminEscape(p.title)}</strong><span class="admin-status">${adminEscape(p.status)}</span></div><p>${adminEscape(p.category)} · ${adminEscape(p.business_type)} · ${adminEscape(formatPostDate(p.created_at))}</p><small>작성자 ID: ${adminEscape(p.user_id)}</small><div class="admin-item-actions"><button type="button" onclick="adminViewPost('${adminEscape(p.id)}')">게시글 보기</button>${p.status==="ACTIVE"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','HIDDEN')">숨김</button><button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','DELETED')">삭제 처리</button>`:p.status==="HIDDEN"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','ACTIVE')">다시 공개</button><button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','DELETED')">삭제 처리</button>`:p.status==="DELETED"?`<button type="button" onclick="setAdminContentStatus('posts','${adminEscape(p.id)}','ACTIVE')">복구</button>`:""}</div></article>`).join(""):'<p class="admin-empty">게시글이 없습니다.</p>';adminMessage("최근 게시글 최대 100건을 표시합니다.");}
  catch(e){console.error("관리자 게시글 조회 오류:",e);box.innerHTML='<p class="admin-empty">게시글 조회에 실패했습니다.</p>';adminMessage(e.message||"조회 실패");}
 }
-async function adminViewPost(id){if(!isAdminUser())return;await openPostDetail(id);}
+async function adminViewPost(id){if(!isAdminUser())return;adminReportedTargetType="POST";adminReportedTargetId=String(id);await openPostDetail(id);}
 async function loadAdminComments(){
  if(!isAdminUser())return;adminMessage("댓글을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
  try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,user_id,content,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
@@ -1988,5 +2008,5 @@ async function openAdminMemberDetail(userId){
 }
 function backToAdminMembers(){const box=$("adminMemberDetail"),list=$("adminPanelContent");if(box)box.style.display="none";if(list)list.style.display="grid";switchAdminTab("members");}
 function adminOpenTarget(type,id){if(!isAdminUser())return;if(type==="POST"){adminViewPost(id);}else if(type==="COMMENT"){adminViewComment(id);}else{adminMessage("지원하지 않는 신고 대상 유형입니다: "+type);}}
-async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,content,status").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminMessage("신고 댓글 #"+id+" · 상태: "+data.status+" · 내용: "+(data.content||"내용 없음"));await adminViewPost(data.post_id);}catch(e){adminMessage("댓글 확인 실패: "+(e.message||"조회 오류"));}}
+async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,content,status").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminMessage("신고 댓글 #"+id+" · 상태: "+data.status+" · 내용: "+(data.content||"내용 없음"));adminReportedTargetType="COMMENT";adminReportedTargetId=String(id);await openPostDetail(data.post_id);setTimeout(()=>{const target=document.getElementById("admin-reported-comment-"+id);if(target)target.scrollIntoView({behavior:"smooth",block:"center"});},250);}catch(e){adminMessage("댓글 확인 실패: "+(e.message||"조회 오류"));}}
 document.addEventListener("DOMContentLoaded",function(){ensureAdminEntry();ensureAdminPanel();});
