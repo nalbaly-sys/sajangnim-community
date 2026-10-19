@@ -34,7 +34,7 @@ py -m http.server 3000
 4. 프로젝트 폴더에서 최신 코드를 받습니다.
 
 ```bat
-cd /d D:\sajangnim-community
+cd D:\sajangnim-community
 git pull origin main
 py -m http.server 3000
 ```
