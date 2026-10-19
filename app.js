@@ -1988,5 +1988,5 @@ async function openAdminMemberDetail(userId){
 }
 function backToAdminMembers(){const box=$("adminMemberDetail"),list=$("adminPanelContent");if(box)box.style.display="none";if(list)list.style.display="grid";switchAdminTab("members");}
 function adminOpenTarget(type,id){if(!isAdminUser())return;if(type==="POST"){adminViewPost(id);}else if(type==="COMMENT"){adminViewComment(id);}else{adminMessage("지원하지 않는 신고 대상 유형입니다: "+type);}}
-async async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,content,status").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminMessage("신고 댓글 #"+id+" · 상태: "+data.status+" · 내용: "+(data.content||"내용 없음"));await adminViewPost(data.post_id);}catch(e){adminMessage("댓글 확인 실패: "+(e.message||"조회 오류"));}}
+async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,content,status").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminMessage("신고 댓글 #"+id+" · 상태: "+data.status+" · 내용: "+(data.content||"내용 없음"));await adminViewPost(data.post_id);}catch(e){adminMessage("댓글 확인 실패: "+(e.message||"조회 오류"));}}
 document.addEventListener("DOMContentLoaded",function(){ensureAdminEntry();ensureAdminPanel();});
