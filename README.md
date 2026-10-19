@@ -12,7 +12,7 @@
 명령 프롬프트(CMD)를 열고 아래 명령어를 한 줄씩 실행합니다.
 
 ```bat
-cd /d D:\sajangnim-community
+cd D:\sajangnim-community
 git pull origin main
 py -m http.server 3000
 ```
