@@ -107,13 +107,28 @@ Supabase 대시보드의 Authentication URL 설정과 각 OAuth 제공자의 설
 - 현재 단계에서는 Supabase RLS가 조회·수정을 허용하지 않을 수 있습니다. 권한 오류가 나더라도 RLS를 끄거나 공개 정책을 추가하지 마세요. 11단계에서 `auth.uid()` 기반 정책과 관리자 역할 검증을 별도로 구성합니다.
 - 실제 관리자 화면을 시험하려면 신뢰할 수 있는 계정의 `profiles.role`을 안전하게 `ADMIN`으로 설정해야 합니다. 브라우저 콘솔이나 공개 화면에서 역할을 변경하지 마세요.
 
-## 8. 프로젝트 파일
+## 8. 관리자 계정 역할과 상태
+
+관리자 권한은 Supabase의 `profiles` 테이블에서 **`role` 컬럼**으로 구분하고, 계정 활성 여부는 **`status` 컬럼**으로 관리합니다.
+
+| 컬럼 | 설정할 값 | 의미 |
+|---|---|---|
+| `role` | `ADMIN` | 최고 관리자 |
+| `role` | `MODERATOR` | 운영 관리자 |
+| `status` | `ACTIVE` | 정상적으로 활동 가능한 계정 |
+
+- 관리자 메뉴는 `role`이 `ADMIN` 또는 `MODERATOR`이고 동시에 `status`가 `ACTIVE`인 계정에 표시됩니다.
+- 기존 테스트 계정을 관리자로 지정하려면 Supabase Table Editor에서 `profiles` 테이블의 해당 회원 행을 찾아 `role = ADMIN`, `status = ACTIVE`로 설정합니다. 이메일이나 Auth 사용자 ID는 변경하지 않습니다.
+- `ADMIN`과 `MODERATOR`는 `status` 값이 아닙니다. 역할은 반드시 `role` 컬럼에 입력합니다.
+- 현재 관리자 기능은 Supabase RLS 정책에 따라 조회·수정이 거부될 수 있습니다. 보안을 위해 RLS를 끄거나 비밀 키를 브라우저에 넣지 마세요. 실제 권한 검증은 11단계에서 마무리합니다.
+
+## 9. 프로젝트 파일
 
 - `index.html`: 페이지 구조
 - `style.css`: 화면 디자인
 - `app.js`: 화면 동작 및 기능
 - `config.js`: 클라이언트 설정
 
-## 9. GitHub 저장소
+## 10. GitHub 저장소
 
 https://github.com/nalbaly-sys/sajangnim-community
