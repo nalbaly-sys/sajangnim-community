@@ -185,6 +185,11 @@ function updateUserUI(){
   ensurePostSearchUI();
   ensureCategoryButtons();
 
+  // 구버전 HTML이 로그인/로그아웃 사이에 남아 있어도 이전 사용자 정보 카드를 제거
+  const legacyUserInfo=$("userInfo");
+  if(legacyUserInfo)legacyUserInfo.remove();
+  document.querySelectorAll(".hero-buttons").forEach(el=>el.remove());
+
   // 기존 updateUserUI() 내용은 그대로 유지
 
   // 게시글 목록은 로그인하지 않아도 표시
