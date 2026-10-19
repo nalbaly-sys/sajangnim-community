@@ -1063,3 +1063,10 @@ body.admin-active .admin-panel-heading{position:sticky;top:0;z-index:4;padding:1
 .admin-error{padding:18px;border:1px solid #fecaca;border-radius:12px;background:#fff7f7;color:#991b1b;overflow-wrap:anywhere}
 .admin-error code{white-space:pre-wrap;word-break:break-word}
 @media(max-width:700px){.admin-member-tools{align-items:stretch;flex-direction:column}.admin-member-tools input{width:100%;box-sizing:border-box}.admin-member-card{align-items:flex-start;flex-direction:column}.admin-member-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-member-detail{padding:13px}.admin-member-posts>div{align-items:flex-start}.admin-panel-heading{position:static!important}}
+
+
+/* 관리자 회원 상세: 감정/공감 유형별 누적 합계 */
+.admin-reaction-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:12px 0 22px}
+.admin-reaction-totals>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--border-color,#2b3445);border-radius:12px;background:var(--card-bg,#151b27);color:var(--text-color,inherit)}
+.admin-reaction-totals strong{font-size:1.2rem}
+#postDetailModal{z-index:100000}
