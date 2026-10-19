@@ -42,12 +42,12 @@
 명령 프롬프트(CMD)를 열고 아래 명령어를 한 줄씩 실행합니다.
 
 ```bat
-cd /d D:\\sajangnim-community
+cd D:\\sajangnim-community
 git pull origin main
 py -m http.server 3000
 ```
 
-- `cd /d D:\\sajangnim-community`: 프로젝트 폴더로 이동합니다.
+- `cd D:\\sajangnim-community`: 프로젝트 폴더로 이동합니다.
 - `git pull origin main`: GitHub의 최신 코드를 내려받습니다.
 - `py -m http.server 3000`: 현재 폴더의 파일을 로컬 웹서버로 실행합니다.
 
@@ -64,7 +64,7 @@ py -m http.server 3000
 3. 프로젝트 폴더에서 최신 코드를 받습니다.
 
 ```bat
-cd /d D:\\sajangnim-community
+cd D:\\sajangnim-community
 git pull origin main
 py -m http.server 3000
 ```
