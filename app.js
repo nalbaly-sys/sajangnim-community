@@ -17,7 +17,7 @@ function $(id){return document.getElementById(id);}
    HOME
 ================================================== */
 
-function showHome(){window.scrollTo({top:0,behavior:"smooth"});}
+function showHome(){document.body.classList.remove("mypage-active");const page=$("myPageSection");if(page)page.style.display="none";window.scrollTo({top:0,behavior:"smooth"});}
 
 /* ==================================================
    MODAL
@@ -206,17 +206,21 @@ function updateUserUI(){
     $("logoutButton").style.display=loggedIn?"inline-block":"none";
   }
 
-  if($("userInfo")){
-    $("userInfo").style.display=loggedIn?"block":"none";
+  if($("headerUserInfo")){
+    $("headerUserInfo").style.display=loggedIn?"flex":"none";
+  }
+
+  if($("headerMyPageButton")){
+    $("headerMyPageButton").style.display=loggedIn?"inline-flex":"none";
   }
 
   if(loggedIn){
-    if($("userNickname")){
-      $("userNickname").textContent=currentUser.nickname||"사장님";
+    if($("headerUserNickname")){
+      $("headerUserNickname").textContent=currentUser.nickname||"사장님";
     }
 
-    if($("userBusinessType")){
-      $("userBusinessType").textContent=currentUser.business_type||"업종 미등록";
+    if($("headerUserBusinessType")){
+      $("headerUserBusinessType").textContent=currentUser.business_type||"기타";
     }
   }
 
@@ -548,14 +552,15 @@ document.addEventListener("DOMContentLoaded",async function(){
 function openMyPage(){
   if(!currentUser){openLoginModal();return;}
   const section=$("myPageSection");
+  document.body.classList.add("mypage-active");
   if(section)section.style.display="block";
   if($("mypageNickname"))$("mypageNickname").value=currentUser.nickname||"";
   if($("mypageBusinessType"))$("mypageBusinessType").value=currentUser.business_type||"";
   if($("mypageIntroduction"))$("mypageIntroduction").value=currentUser.introduction||"";
   loadMyPage();
-  if(section)section.scrollIntoView({behavior:"smooth",block:"start"});
+  window.scrollTo({top:0,behavior:"smooth"});
 }
-function closeMyPage(){const section=$("myPageSection");if(section)section.style.display="none";}
+function closeMyPage(){const section=$("myPageSection");if(section)section.style.display="none";document.body.classList.remove("mypage-active");window.scrollTo({top:0,behavior:"smooth"});}
 async function loadMyPage(){
   if(!currentUser)return;
   const postsBox=$("mypagePosts"),commentsBox=$("mypageComments");
