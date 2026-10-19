@@ -1031,7 +1031,8 @@ async function openPostDetail(postId){
         content,
         is_anonymous,
         view_count,
-        created_at
+        created_at,
+        status
       `)
       .eq("id",postId)
       .single();
