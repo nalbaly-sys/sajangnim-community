@@ -1885,10 +1885,36 @@ async function loadAdminDashboard(){
 }
 async function loadAdminReports(){
  if(!isAdminUser())return;adminMessage("신고 목록을 불러오는 중입니다.");const box=$("adminPanelContent");if(!box)return;
- try{const {data,error}=await supabaseClient.from("reports").select("id,target_type,target_id,reporter_id,reason,detail,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
- box.innerHTML=(data||[]).length?data.map(r=>`<article class="admin-item"><div class="admin-item-head"><strong>신고 #${adminEscape(r.id)} · ${adminEscape(r.target_type)}</strong><span class="admin-status">${adminEscape(r.status)}</span></div><p><b>대상 ID:</b> ${adminEscape(r.target_id)} · <b>사유:</b> ${adminEscape(r.reason)}</p><p><b>추가 설명:</b> ${adminEscape(r.detail||"없음")}</p><small>신고자: ${adminEscape(r.reporter_id)} · ${adminEscape(formatPostDate(r.created_at))}</small><div class="admin-item-actions">${r.status==="PENDING"?`<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','RESOLVED')">처리 완료</button><button type="button" onclick="setReportStatus('${adminEscape(r.id)}','REJECTED')">신고 기각</button>`:""}<button type="button" onclick="adminOpenTarget('${adminEscape(r.target_type)}','${adminEscape(r.target_id)}')">대상 확인</button></div></article>`).join(""):'<p class="admin-empty">접수된 신고가 없습니다.</p>';
- adminMessage("최근 신고 최대 100건을 표시합니다.");await loadAdminDashboard();
- }catch(e){console.error("관리자 신고 조회 오류:",e);box.innerHTML='<div class="admin-error"><strong>신고 목록 조회 실패</strong><p>Supabase가 reports 테이블 접근을 거부했습니다. 관리자 UI만으로 권한을 우회할 수 없습니다.</p><code>'+adminEscape(e.message||"permission denied")+'</code><p>RLS 정책을 안전하게 구성하는 11단계가 필요합니다. RLS를 끄지 마세요.</p></div>';adminMessage("권한 오류: reports 테이블 접근 거부");}
+ try{
+  const {data,error}=await supabaseClient.from("reports").select("id,target_type,target_id,reporter_id,reason,detail,status,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
+  const rows=data||[],postIds=[...new Set(rows.filter(r=>r.target_type==="POST").map(r=>String(r.target_id)))],commentIds=[...new Set(rows.filter(r=>r.target_type==="COMMENT").map(r=>String(r.target_id)))];
+  let postMap={},commentMap={};
+  if(postIds.length){const q=await supabaseClient.from("posts").select("id,title,status").in("id",postIds);if(q.error)console.warn("신고 대상 게시글 제목 조회 실패:",q.error);else postMap=Object.fromEntries((q.data||[]).map(p=>[String(p.id),p]));}
+  if(commentIds.length){const q=await supabaseClient.from("comments").select("id,post_id,content,status").in("id",commentIds);if(q.error)console.warn("신고 대상 댓글 내용 조회 실패:",q.error);else commentMap=Object.fromEntries((q.data||[]).map(c=>[String(c.id),c]));}
+  const parentIds=[...new Set(Object.values(commentMap).map(c=>String(c.post_id)))],missingParentIds=parentIds.filter(id=>!postMap[id]);
+  if(missingParentIds.length){const q=await supabaseClient.from("posts").select("id,title,status").in("id",missingParentIds);if(!q.error)for(const p of q.data||[])postMap[String(p.id)]=p;}
+  box.innerHTML=rows.length?rows.map(r=>{
+   const targetId=String(r.target_id),comment=r.target_type==="COMMENT"?commentMap[targetId]:null,post=r.target_type==="POST"?postMap[targetId]:(comment?postMap[String(comment.post_id)]:null);
+   const targetTitle=r.target_type==="POST"?(post?post.title:"게시글 정보를 불러올 수 없음"):(comment?("댓글 내용: "+comment.content):"댓글 내용을 불러올 수 없음");
+   const targetState=r.target_type==="COMMENT"?(comment?comment.status:"대상 확인 불가"):(post?post.status:"대상 확인 불가");
+   const parentInfo=r.target_type==="COMMENT"?(comment?"원본 게시글: "+(post?post.title:"제목 조회 불가")+" · 게시글 ID: "+comment.post_id:"댓글 ID: "+targetId):"";
+   const supported=["POST","COMMENT"].includes(r.target_type);
+   return `<article class="admin-item"><div class="admin-item-head"><strong>신고 #${adminEscape(r.id)} · ${adminEscape(r.target_type==="POST"?"게시글 신고":r.target_type==="COMMENT"?"댓글 신고":r.target_type)}</strong><span class="admin-status">${adminEscape(r.status)}</span></div><p><b>신고 대상:</b> ${adminEscape(targetTitle)}</p>${parentInfo?`<p><b>${adminEscape(parentInfo)}</b></p>`:""}<p><b>대상 상태:</b> ${adminEscape(targetState)} · <b>대상 ID:</b> ${adminEscape(targetId)}</p><p><b>신고 사유:</b> ${adminEscape(r.reason)}</p><p><b>추가 설명:</b> ${adminEscape(r.detail||"없음")}</p><small>신고자 ID: ${adminEscape(r.reporter_id)} · ${adminEscape(formatPostDate(r.created_at))}</small><div class="admin-item-actions">${r.status==="PENDING"?`<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','REJECTED')">신고 기각</button>${supported&&targetState==="ACTIVE"?`<button type="button" onclick="hideReportedTargetAndResolve('${adminEscape(r.target_type)}','${adminEscape(targetId)}','${adminEscape(r.id)}')">대상 숨김 + 처리 완료</button>`:""}<button type="button" onclick="setReportStatus('${adminEscape(r.id)}','RESOLVED')">처리 완료만</button>`:""}${r.target_type==="POST"?`<button type="button" onclick="adminViewPost('${adminEscape(targetId)}')">게시글 확인</button>`:r.target_type==="COMMENT"&&comment?`<button type="button" onclick="adminViewComment('${adminEscape(targetId)}')">댓글 확인</button>`:""}</div></article>`;
+  }).join(""):'<p class="admin-empty">접수된 신고가 없습니다.</p>';
+  adminMessage("최근 신고 최대 100건을 표시합니다. 댓글 신고는 댓글 내용과 원본 게시글을 함께 표시합니다.");await loadAdminDashboard();
+ }catch(e){console.error("관리자 신고 조회 오류:",e);box.innerHTML='<div class="admin-error"><strong>신고 목록 조회 실패</strong><p>Supabase가 reports 테이블 접근을 거부했거나 신고 데이터 조회 중 오류가 발생했습니다.</p><code>'+adminEscape(e.message||"permission denied")+'</code><p>RLS를 끄거나 공개 정책을 추가하지 마세요.</p></div>';adminMessage("신고 조회 오류: "+(e.message||"권한 오류"));}
+}
+async function hideReportedTargetAndResolve(type,targetId,reportId){
+ if(!isAdminUser()||!["POST","COMMENT"].includes(type))return;
+ const table=type==="POST"?"posts":"comments",label=type==="POST"?"게시글":"댓글";
+ if(!confirm("신고 대상 "+label+"을 숨김 처리하고 신고 상태를 처리 완료로 바꿀까요?\n\n대상은 삭제되지 않으며 관리자 메뉴에서 다시 공개할 수 있습니다."))return;
+ try{
+  const target=await supabaseClient.from(table).update({status:"HIDDEN"}).eq("id",targetId).select("id").maybeSingle();
+  if(target.error)throw target.error;if(!target.data)throw new Error("대상 숨김에 실패했습니다. "+label+" 관리 권한을 확인해주세요.");
+  const report=await supabaseClient.from("reports").update({status:"RESOLVED"}).eq("id",reportId).select("id").maybeSingle();
+  if(report.error)throw report.error;if(!report.data)throw new Error("대상은 숨겨졌지만 신고 상태 변경은 실패했습니다. 신고 관리에서 상태를 다시 변경해주세요.");
+  adminMessage("신고 대상 "+label+"을 숨김 처리하고 신고를 처리 완료했습니다.");await loadAdminReports();await loadAdminDashboard();
+ }catch(e){console.error("신고 대상 조치 실패:",e);adminMessage("신고 조치 중 오류: "+(e.message||"권한을 확인해주세요."));await loadAdminReports();}
 }
 async function setReportStatus(id,status){
  if(!isAdminUser()||!["RESOLVED","REJECTED"].includes(status))return;if(!confirm(status==="RESOLVED"?"이 신고를 처리 완료로 변경할까요?":"이 신고를 기각할까요?"))return;
@@ -1962,5 +1988,5 @@ async function openAdminMemberDetail(userId){
 }
 function backToAdminMembers(){const box=$("adminMemberDetail"),list=$("adminPanelContent");if(box)box.style.display="none";if(list)list.style.display="grid";switchAdminTab("members");}
 function adminOpenTarget(type,id){if(!isAdminUser())return;if(type==="POST"){adminViewPost(id);}else if(type==="COMMENT"){adminViewComment(id);}else{adminMessage("지원하지 않는 신고 대상 유형입니다: "+type);}}
-async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminViewPost(data.post_id);}catch(e){adminMessage("댓글 원본 확인 실패: "+(e.message||"조회 오류"));}}
+async async function adminViewComment(id){try{const {data,error}=await supabaseClient.from("comments").select("id,post_id,content,status").eq("id",id).maybeSingle();if(error)throw error;if(!data)throw new Error("댓글을 찾을 수 없습니다.");adminMessage("신고 댓글 #"+id+" · 상태: "+data.status+" · 내용: "+(data.content||"내용 없음"));await adminViewPost(data.post_id);}catch(e){adminMessage("댓글 확인 실패: "+(e.message||"조회 오류"));}}
 document.addEventListener("DOMContentLoaded",function(){ensureAdminEntry();ensureAdminPanel();});
