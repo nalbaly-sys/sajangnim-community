@@ -1922,8 +1922,17 @@ async function hideReportedTargetAndResolve(type,targetId,reportId){
  const table=type==="POST"?"posts":"comments",label=type==="POST"?"게시글":"댓글";
  if(!confirm("신고 대상 "+label+"을 숨김 처리하고 신고 상태를 처리 완료로 바꿀까요?\n\n대상은 삭제되지 않으며 관리자 메뉴에서 다시 공개할 수 있습니다."))return;
  try{
-  const target=await supabaseClient.from(table).update({status:"HIDDEN"}).eq("id",targetId).select("id").maybeSingle();
-  if(target.error)throw target.error;if(!target.data)throw new Error("대상 숨김에 실패했습니다. "+label+" 관리 권한을 확인해주세요.");
+  let target;
+  if(type==="COMMENT"){
+   const result=await supabaseClient.rpc("admin_hide_comment",{p_comment_id:Number(targetId)});
+   if(result.error)throw result.error;
+   if(result.data==null)throw new Error("댓글 숨김에 실패했습니다. 관리자 권한 또는 댓글 ID를 확인해주세요.");
+   target={data:{id:result.data},error:null};
+  }else{
+   target=await supabaseClient.from("posts").update({status:"HIDDEN"}).eq("id",targetId).select("id").maybeSingle();
+   if(target.error)throw target.error;
+   if(!target.data)throw new Error("대상 숨김에 실패했습니다. "+label+" 관리 권한을 확인해주세요.");
+  }
   const report=await supabaseClient.from("reports").update({status:"RESOLVED"}).eq("id",reportId).select("id").maybeSingle();
   if(report.error)throw report.error;if(!report.data)throw new Error("대상은 숨겨졌지만 신고 상태 변경은 실패했습니다. 신고 관리에서 상태를 다시 변경해주세요.");
   adminMessage("신고 대상 "+label+"을 숨김 처리하고 신고를 처리 완료했습니다.");await loadAdminReports();await loadAdminDashboard();
