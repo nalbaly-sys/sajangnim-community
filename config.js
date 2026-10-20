@@ -17,3 +17,10 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_CONFIG.url,
   SUPABASE_CONFIG.anonKey
 );
+
+/* 관리자 신고 댓글 보완 스크립트는 app.js 로드가 끝난 뒤 적용 */
+window.addEventListener("load",function(){
+  const script=document.createElement("script");
+  script.src="admin-comment-fix.js?v=20261020";
+  document.body.appendChild(script);
+});
