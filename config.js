@@ -67,6 +67,11 @@ window.addEventListener("load",function(){
                               adminReplyAnonymous.onload=function(){
                                 const adminCommentDisplay=document.createElement("script");
                                 adminCommentDisplay.src="admin-comment-display-polish.js?v=20261021-1";
+                                adminCommentDisplay.onload=function(){
+                                  const notifications=document.createElement("script");
+                                  notifications.src="notifications.js?v=20261021-1";
+                                  document.body.appendChild(notifications);
+                                };
                                 document.body.appendChild(adminCommentDisplay);
                               };
                               document.body.appendChild(adminReplyAnonymous);
