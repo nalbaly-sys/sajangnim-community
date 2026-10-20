@@ -31,6 +31,11 @@ window.addEventListener("load",function(){
       member.onload=function(){
         const paging=document.createElement("script");
         paging.src="admin-pagination-search.js?v=20261020-1";
+        paging.onload=function(){
+          const members=document.createElement("script");
+          members.src="admin-members-pagination.js?v=20261020-1";
+          document.body.appendChild(members);
+        };
         document.body.appendChild(paging);
       };
       document.body.appendChild(member);
