@@ -33,30 +33,37 @@
 
       <div class="header-actions">
 
+        <div id="headerUserInfo" class="header-user-info" style="display:none;">
+          <span class="header-welcome">👋 어서 오세요</span>
+          <strong id="headerUserNickname">사장님</strong>
+          <span id="headerUserBusinessType" class="header-business-type">기타</span>
+        </div>
+
         <button
           id="loginButton"
           class="header-button"
           onclick="openLoginModal()"
-        >
-          로그인
-        </button>
+        >로그인</button>
 
         <button
           id="signupButton"
           class="header-button primary"
           onclick="openSignupModal()"
-        >
-          회원가입
-        </button>
+        >회원가입</button>
+
+        <button
+          id="headerMyPageButton"
+          class="header-button"
+          onclick="openMyPage()"
+          style="display:none;"
+        >👤 마이페이지</button>
 
         <button
           id="logoutButton"
           class="header-button"
           onclick="logout()"
           style="display:none;"
-        >
-          로그아웃
-        </button>
+        >로그아웃</button>
 
       </div>
 
@@ -91,23 +98,7 @@
         아무에게도 말 못 했던 사장님들의 속마음까지.
       </p>
 
-      <div class="hero-buttons">
 
-        <button
-          class="big-button primary"
-          onclick="openSignupModal()"
-        >
-          사장님으로 시작하기
-        </button>
-
-        <button
-          class="big-button"
-          onclick="openLoginModal()"
-        >
-          로그인
-        </button>
-
-      </div>
 
     </section>
 
@@ -132,30 +123,6 @@
 
     </section>
 
-
-    <!-- ==========================================
-         LOGIN USER INFO
-    =========================================== -->
-
-    <section
-      id="userInfo"
-      class="user-info"
-      style="display:none;"
-    >
-
-      <div class="user-info-title">
-        👋 어서 오세요
-      </div>
-
-      <div id="userNickname">
-        사장님
-      </div>
-
-      <div id="userBusinessType">
-        업종
-      </div>
-      <div class="user-info-actions"><button type="button" class="mypage-open-button" onclick="openMyPage()">👤 마이페이지</button></div>
-    </section>
 
     <!-- MY PAGE -->
     <section id="myPageSection" class="mypage-section" style="display:none;">

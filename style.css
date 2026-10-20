@@ -921,3 +921,159 @@ button{cursor:pointer}
 .mypage-danger-panel{border-color:#fecaca}.mypage-danger-panel p{color:#64748b;font-size:13px;line-height:1.6}
 .mypage-danger-button{padding:9px 13px;border:1px solid #fecaca;border-radius:9px;background:#fff;font:inherit;font-size:13px;cursor:pointer}
 @media(max-width:600px){.mypage-section{margin:16px 0;padding:14px;border-radius:12px}.mypage-heading h2{font-size:21px}.mypage-panel{padding:14px}.mypage-stats{gap:8px}.mypage-stat{padding:12px;font-size:12px}.mypage-stat strong{font-size:21px}.mypage-item-actions{justify-content:flex-start}}
+
+
+/* ==========================================
+   헤더 사용자 정보 및 마이페이지 별도 화면
+========================================== */
+.header-actions{align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.header-user-info{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;color:#475569}
+.header-user-info strong{font-size:14px;color:#172033}
+.header-welcome{color:#475569}
+.header-business-type{padding:4px 8px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:12px}
+#headerMyPageButton{white-space:nowrap}
+body.mypage-active .main-container>*:not(#myPageSection){display:none!important}
+body.mypage-active .main-container{min-height:calc(100vh - 70px)}
+body.mypage-active .mypage-section{display:block!important;margin:28px auto 60px}
+@media(max-width:760px){
+  .header-inner{align-items:flex-start;gap:10px;padding:12px 14px}
+  .logo{font-size:16px;white-space:nowrap;padding-top:8px}
+  .header-actions{gap:6px}
+  .header-user-info{width:100%;justify-content:flex-end;gap:5px;font-size:11px}
+  .header-user-info strong{font-size:12px}
+  .header-business-type{font-size:11px;padding:3px 6px}
+  .header-button{padding:8px 10px;font-size:12px}
+}
+@media(max-width:480px){
+  .header-inner{flex-direction:column;align-items:stretch}
+  .logo{text-align:center;padding-top:0}
+  .header-actions{justify-content:center}
+  .header-user-info{justify-content:center;order:-1}
+}
+
+
+/* ==========================================
+   9단계 UI 보완: 접근성·모바일 오버플로
+   기존 기능과 색상 체계는 유지하고 사용성만 보완합니다.
+========================================== */
+html,body{max-width:100%;overflow-x:hidden}
+button,input,select,textarea{max-width:100%}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(59,130,246,.55);outline-offset:2px}
+.category-grid button{min-width:0;overflow-wrap:anywhere;transition:transform .15s ease,border-color .15s ease,background-color .15s ease}
+.category-grid button:hover{border-color:#d1d5db;background:#f5f5f5}
+.modal{overflow-y:auto}
+.modal-box{max-height:calc(100dvh - 40px);overflow-y:auto}
+#postModal .modal-box{overscroll-behavior:contain}
+.post-section,.mypage-section,.mypage-panel,.mypage-item{min-width:0}
+.mypage-item-meta{flex-wrap:wrap}
+@media(max-width:760px){
+  .main-container{padding-right:14px;padding-left:14px}
+  .post-section{padding:18px}
+  .post-section-header{align-items:flex-start;flex-wrap:wrap}
+  .post-section-header h2{font-size:20px}
+  .post-search{grid-template-columns:minmax(0,1fr)!important}
+  .post-search input,.post-search select,.post-search button{width:100%;min-width:0}
+}
+@media(max-width:480px){
+  .hero h1{font-size:clamp(38px,12vw,54px)}
+  .hero-sub{font-size:14px!important}
+  .post-section{padding:14px}
+  .modal{padding:10px}
+  .modal-box{max-height:calc(100dvh - 20px);padding:22px 16px}
+  .mypage-heading{align-items:flex-start}
+  .mypage-heading p{line-height:1.5}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
+
+/* 9단계 보완: 모바일에서도 글쓰기 버튼 가로 유지 */
+.post-section-header>div{flex:1 1 220px;min-width:0}
+.post-section-header>button.big-button{flex:0 0 auto;width:auto;min-width:76px;white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb;align-self:flex-start}
+@media(max-width:760px){
+  .post-section-header{display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;gap:10px}
+  .post-section-header>div{flex:1 1 auto;min-width:0}
+  .post-section-header>button.big-button{flex:0 0 auto;min-width:76px;padding:10px 13px;white-space:nowrap}
+}
+@media(max-width:360px){
+  .post-section-header{gap:6px}
+  .post-section-header>button.big-button{min-width:68px;padding:9px 10px;font-size:13px}
+}
+
+
+/* STEP 10: 관리자 대시보드 */
+.admin-panel-section{max-width:1120px;margin:28px auto;padding:24px;background:#fff;border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 12px 36px rgba(15,23,42,.07);color:#1f2937}
+.admin-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+.admin-panel-heading h2{margin:4px 0 8px;font-size:26px}
+.admin-panel-heading p{margin:0;color:#64748b;line-height:1.6}
+.admin-eyebrow{font-size:11px!important;font-weight:800;letter-spacing:.16em;color:#64748b!important}
+.admin-panel-heading>button,.admin-tabs button,.admin-item-actions button,.header-button{border:1px solid #d1d5db;border-radius:10px;background:#f8fafc;color:#1f2937;padding:9px 13px;cursor:pointer}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.admin-stat-grid article{padding:17px;border:1px solid #e5e7eb;border-radius:14px;background:#f8fafc;display:flex;flex-direction:column;gap:8px}
+.admin-stat-grid span{font-size:13px;color:#64748b}.admin-stat-grid strong{font-size:28px}
+.admin-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e5e7eb;padding-bottom:14px}
+.admin-tabs button.active{background:#1f2937;color:white;border-color:#1f2937}
+.admin-panel-content{display:grid;gap:12px;padding-top:16px}
+.admin-item{border:1px solid #e5e7eb;border-radius:14px;padding:16px;min-width:0}
+.admin-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.admin-item p{line-height:1.6;overflow-wrap:anywhere}.admin-item small{color:#64748b;overflow-wrap:anywhere}
+.admin-status{display:inline-block;border-radius:999px;background:#f1f5f9;padding:4px 9px;font-size:12px;white-space:nowrap}
+.admin-item-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.admin-item-actions button:hover,.admin-tabs button:hover{background:#e2e8f0}
+.admin-message{font-size:13px;color:#64748b;margin-top:12px;overflow-wrap:anywhere}.admin-empty{padding:24px;text-align:center;color:#64748b}
+#adminPanelButton{margin-left:8px}
+@media(max-width:700px){.admin-panel-section{margin:16px 10px;padding:16px;border-radius:14px}.admin-panel-heading h2{font-size:21px}.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-stat-grid article{padding:13px}.admin-stat-grid strong{font-size:23px}.admin-item{padding:13px}.admin-item-head{flex-direction:column;gap:6px}}
+
+
+/* STEP 10 관리자 페이지 분리 화면 및 인터랙션 개선 */
+body.admin-active .main-container>*:not(#adminPanelSection){display:none!important}
+body.admin-active .main-container{min-height:100vh}
+body.admin-active #adminPanelSection{display:block!important;position:relative;width:100%;max-width:none;min-height:100vh;box-sizing:border-box;margin:0;padding:clamp(16px,3vw,36px);border:0;border-radius:0;box-shadow:none;background:#f8fafc}
+body.admin-active .admin-panel-heading{position:sticky;top:0;z-index:4;padding:14px 0;background:#f8fafc}
+.admin-tabs button{transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease}
+.admin-tabs button.active,.admin-tabs button.active:hover{background:#1d4ed8!important;color:#fff!important;border-color:#1d4ed8!important;box-shadow:0 4px 12px rgba(29,78,216,.22)}
+.admin-tabs button:active{transform:scale(.98)}
+.admin-member-tools{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.admin-member-tools input{width:min(100%,520px);padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#1f2937}
+.admin-member-tools span{color:#64748b;font-size:13px}
+.admin-member-list{display:grid;gap:9px}
+.admin-member-card{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:15px;text-align:left;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#1f2937;cursor:pointer}
+.admin-member-card:hover{border-color:#93c5fd;background:#eff6ff}
+.admin-member-card>span:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-member-card small{color:#64748b;overflow-wrap:anywhere}
+.admin-member-detail{margin-top:16px;padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:16px}
+.admin-member-detail-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.admin-member-detail-head>div{min-width:0}
+.admin-member-detail-head h3{margin:4px 0}
+.admin-member-detail-head p{margin:0;color:#64748b;overflow-wrap:anywhere;font-size:12px}
+.admin-member-detail-head button,.admin-member-posts button,.admin-error button{padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer}
+.admin-member-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.admin-member-detail-grid article{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.admin-member-detail-grid span{font-size:13px;color:#64748b}
+.admin-member-detail-grid strong{font-size:25px;color:#0f172a}
+.admin-member-profile{padding:14px;border-radius:12px;background:#f8fafc}
+.admin-member-profile p{overflow-wrap:anywhere}
+.admin-member-posts{display:grid;gap:8px}
+.admin-member-posts>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #e2e8f0}
+.admin-member-posts span{overflow-wrap:anywhere}
+.admin-danger-note{margin-top:22px;padding:14px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed;color:#9a3412}
+.admin-danger-note p{margin-bottom:0;line-height:1.6}
+.admin-error{padding:18px;border:1px solid #fecaca;border-radius:12px;background:#fff7f7;color:#991b1b;overflow-wrap:anywhere}
+.admin-error code{white-space:pre-wrap;word-break:break-word}
+@media(max-width:700px){.admin-member-tools{align-items:stretch;flex-direction:column}.admin-member-tools input{width:100%;box-sizing:border-box}.admin-member-card{align-items:flex-start;flex-direction:column}.admin-member-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-member-detail{padding:13px}.admin-member-posts>div{align-items:flex-start}.admin-panel-heading{position:static!important}}
+
+
+/* 관리자 회원 상세: 감정/공감 유형별 누적 합계 */
+.admin-reaction-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:12px 0 22px}
+.admin-reaction-totals>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border:1px solid var(--border-color,#2b3445);border-radius:12px;background:var(--card-bg,#151b27);color:var(--text-color,inherit)}
+.admin-reaction-totals strong{font-size:1.2rem}
+#postDetailModal{z-index:100000}
+
+
+/* 관리자 회원 상세: 감정/공감 합계 가독성 개선 */
+.admin-member-detail .admin-reaction-totals>div{background:#fff!important;border:1px solid #cbd5e1!important;color:#1e293b!important;box-shadow:0 2px 6px rgba(15,23,42,.06)}
+.admin-member-detail .admin-reaction-totals>div{font-size:14px;font-weight:800;line-height:1.5}
+.admin-member-detail .admin-reaction-totals strong{color:#0f172a!important;font-size:1.3rem;font-weight:900;min-width:1.5em;text-align:right}
+@media(max-width:480px){.admin-member-detail .admin-reaction-totals{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-member-detail .admin-reaction-totals>div{padding:11px 10px;font-size:13px}}
