@@ -43,6 +43,11 @@ window.addEventListener("load",function(){
               editRefresh.onload=function(){
                 const memberActivity=document.createElement("script");
                 memberActivity.src="admin-member-activity-pagination.js?v=20261020-1";
+                memberActivity.onload=function(){
+                  const inlineEdit=document.createElement("script");
+                  inlineEdit.src="inline-edit.js?v=20261020-1";
+                  document.body.appendChild(inlineEdit);
+                };
                 document.body.appendChild(memberActivity);
               };
               document.body.appendChild(editRefresh);
