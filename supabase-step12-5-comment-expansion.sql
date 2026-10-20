@@ -165,6 +165,7 @@ REVOKE ALL ON TABLE public.comment_reactions FROM authenticated;
 GRANT SELECT ON TABLE public.comment_reactions TO anon, authenticated;
 GRANT INSERT (comment_id,user_id,reaction_type) ON TABLE public.comment_reactions TO authenticated;
 GRANT DELETE ON TABLE public.comment_reactions TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE public.comment_reactions_id_seq TO authenticated;
 
 GRANT INSERT (post_id,user_id,content,is_anonymous,status,parent_comment_id,reply_to_user_id)
   ON TABLE public.comments TO authenticated;
