@@ -28,6 +28,11 @@ window.addEventListener("load",function(){
     ui.onload=function(){
       const member=document.createElement("script");
       member.src="admin-member-detail-fix.js?v=20261020-1";
+      member.onload=function(){
+        const paging=document.createElement("script");
+        paging.src="admin-pagination-search.js?v=20261020-1";
+        document.body.appendChild(paging);
+      };
       document.body.appendChild(member);
     };
     document.body.appendChild(ui);
