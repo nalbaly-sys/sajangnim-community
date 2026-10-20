@@ -1,6 +1,6 @@
-/* 관리자 회원목록 100명 페이지네이션 + 역할/상태/업종/검색 */
+/* 관리자 회원목록 20명 페이지네이션 + 역할/상태/업종/검색 */
 (function(){
-  const PAGE_SIZE=100;
+  const PAGE_SIZE=20;
   const state={page:1,role:'ALL',status:'ALL',business:'ALL',query:''};
   const originalLoadAdminMembers=window.loadAdminMembers;
 
@@ -32,10 +32,10 @@
 
   function toolbar(total){
     const businesses=['ALL','꽃집','식당','카페','의류','미용','소매','온라인','서비스','기타'];
-    return `<div class="admin-member-filterbar"><div class="wide"><input id="adminMemberServerSearch" type="search" value="${esc(state.query)}" placeholder="닉네임 또는 회원 ID 검색"><button type="button" onclick="adminMemberApplySearch()">검색</button><button type="button" onclick="adminMemberResetFilters()">초기화</button><span><strong>전체 ${Number(total||0).toLocaleString()}명 · 100명씩 보기</strong></span></div><label>역할<select onchange="adminMemberFilter('role',this.value)"><option value="ALL" ${state.role==='ALL'?'selected':''}>전체</option><option value="USER" ${state.role==='USER'?'selected':''}>일반회원</option><option value="MODERATOR" ${state.role==='MODERATOR'?'selected':''}>운영자</option><option value="ADMIN" ${state.role==='ADMIN'?'selected':''}>관리자</option></select></label><label>상태<select onchange="adminMemberFilter('status',this.value)"><option value="ALL" ${state.status==='ALL'?'selected':''}>전체</option><option value="ACTIVE" ${state.status==='ACTIVE'?'selected':''}>정상</option><option value="SUSPENDED" ${state.status==='SUSPENDED'?'selected':''}>정지</option><option value="BLOCKED" ${state.status==='BLOCKED'?'selected':''}>차단</option><option value="INACTIVE" ${state.status==='INACTIVE'?'selected':''}>비활성</option></select></label><label>업종<select onchange="adminMemberFilter('business',this.value)">${businesses.map(v=>`<option value="${esc(v)}" ${state.business===v?'selected':''}>${v==='ALL'?'전체 업종':esc(v)}</option>`).join('')}</select></label></div>`;
+    return `<div class="admin-member-filterbar"><div class="wide"><input id="adminMemberServerSearch" type="search" value="${esc(state.query)}" placeholder="닉네임 또는 회원 ID 검색"><button type="button" onclick="adminMemberApplySearch()">검색</button><button type="button" onclick="adminMemberResetFilters()">초기화</button><span><strong>전체 ${Number(total||0).toLocaleString()}명 · 20명씩 보기</strong></span></div><label>역할<select onchange="adminMemberFilter('role',this.value)"><option value="ALL" ${state.role==='ALL'?'selected':''}>전체</option><option value="USER" ${state.role==='USER'?'selected':''}>일반회원</option><option value="MODERATOR" ${state.role==='MODERATOR'?'selected':''}>운영자</option><option value="ADMIN" ${state.role==='ADMIN'?'selected':''}>관리자</option></select></label><label>상태<select onchange="adminMemberFilter('status',this.value)"><option value="ALL" ${state.status==='ALL'?'selected':''}>전체</option><option value="ACTIVE" ${state.status==='ACTIVE'?'selected':''}>정상</option><option value="SUSPENDED" ${state.status==='SUSPENDED'?'selected':''}>정지</option><option value="BLOCKED" ${state.status==='BLOCKED'?'selected':''}>차단</option><option value="INACTIVE" ${state.status==='INACTIVE'?'selected':''}>비활성</option></select></label><label>업종<select onchange="adminMemberFilter('business',this.value)">${businesses.map(v=>`<option value="${esc(v)}" ${state.business===v?'selected':''}>${v==='ALL'?'전체 업종':esc(v)}</option>`).join('')}</select></label></div>`;
   }
 
-  function pager(total){const pages=Math.max(1,Math.ceil(Number(total||0)/PAGE_SIZE));if(state.page>pages)state.page=pages;return `<div class="admin-member-pager"><button type="button" ${state.page<=1?'disabled':''} onclick="adminMemberPage(-1)">← 이전 100명</button><span class="admin-member-pageinfo">${state.page} / ${pages} 페이지 · 전체 ${Number(total||0).toLocaleString()}명</span><button type="button" ${state.page>=pages?'disabled':''} onclick="adminMemberPage(1)">다음 100명 →</button></div>`;}
+  function pager(total){const pages=Math.max(1,Math.ceil(Number(total||0)/PAGE_SIZE));if(state.page>pages)state.page=pages;return `<div class="admin-member-pager"><button type="button" ${state.page<=1?'disabled':''} onclick="adminMemberPage(-1)">← 이전 20명</button><span class="admin-member-pageinfo">${state.page} / ${pages} 페이지 · 전체 ${Number(total||0).toLocaleString()}명</span><button type="button" ${state.page>=pages?'disabled':''} onclick="adminMemberPage(1)">다음 20명 →</button></div>`;}
 
   window.adminMemberPage=function(delta){state.page=Math.max(1,state.page+Number(delta||0));window.loadAdminMembers();};
   window.adminMemberFilter=function(type,value){if(type==='role')state.role=value||'ALL';if(type==='status')state.status=value||'ALL';if(type==='business')state.business=value||'ALL';state.page=1;window.loadAdminMembers();};
@@ -49,7 +49,7 @@
       const rows=data?.rows||[],total=Number(data?.total||0);
       box.innerHTML=toolbar(total)+`<div id="adminMemberList" class="admin-member-list">${rows.length?rows.map(memberCard).join(''):'<p class="admin-empty">해당 조건의 회원이 없습니다.</p>'}</div>`+pager(total);
       const input=document.getElementById('adminMemberServerSearch');if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter')window.adminMemberApplySearch();});
-      if(typeof adminMessage==='function')adminMessage('회원 전체 기록을 100명씩 표시합니다. 역할·상태·업종 필터와 닉네임/ID 검색을 사용할 수 있습니다.');
+      if(typeof adminMessage==='function')adminMessage('회원 전체 기록을 20명씩 표시합니다. 역할·상태·업종 필터와 닉네임/ID 검색을 사용할 수 있습니다.');
     }catch(e){console.warn('회원 페이지 RPC 실패, 기존 목록으로 복귀:',e);if(originalLoadAdminMembers)return originalLoadAdminMembers();}
   };
 
