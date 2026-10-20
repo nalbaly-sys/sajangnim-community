@@ -1,6 +1,6 @@
-/* 관리자 목록 100건 페이지네이션 + 서버 전체검색 */
+/* 관리자 목록 20건 페이지네이션 + 서버 전체검색 */
 (function(){
-  const PAGE_SIZE=100;
+  const PAGE_SIZE=20;
   const state={reports:{page:1,status:'ALL'},posts:{page:1,status:'ALL'},comments:{page:1,status:'ALL'}};
   const old={
     reports:window.loadAdminReports,
@@ -38,13 +38,13 @@
   function pager(type,total){
     const st=state[type],pages=Math.max(1,Math.ceil(Number(total||0)/PAGE_SIZE));
     if(st.page>pages)st.page=pages;
-    return `<div class="admin-pagination"><button type="button" ${st.page<=1?'disabled':''} onclick="adminListPage('${type}',-1)">← 이전 100건</button><span class="admin-page-info">${st.page} / ${pages} 페이지 · 전체 ${Number(total||0).toLocaleString()}건</span><button type="button" ${st.page>=pages?'disabled':''} onclick="adminListPage('${type}',1)">다음 100건 →</button></div>`;
+    return `<div class="admin-pagination"><button type="button" ${st.page<=1?'disabled':''} onclick="adminListPage('${type}',-1)">← 이전 20건</button><span class="admin-page-info">${st.page} / ${pages} 페이지 · 전체 ${Number(total||0).toLocaleString()}건</span><button type="button" ${st.page>=pages?'disabled':''} onclick="adminListPage('${type}',1)">다음 20건 →</button></div>`;
   }
 
   function toolbar(type,total){
     const st=state[type];
     const opts=type==='reports'?[['ALL','전체'],['PENDING','접수중'],['RESOLVED','처리완료'],['REJECTED','기각']]:[['ALL','전체'],['ACTIVE','공개'],['HIDDEN','숨김'],['DELETED','삭제']];
-    return `<div class="admin-list-toolbar"><strong>전체 ${Number(total||0).toLocaleString()}건 · 100건씩 보기</strong><label>상태 <select onchange="adminListFilter('${type}',this.value)">${opts.map(([v,t])=>`<option value="${v}" ${st.status===v?'selected':''}>${t}</option>`).join('')}</select></label></div>`;
+    return `<div class="admin-list-toolbar"><strong>전체 ${Number(total||0).toLocaleString()}건 · 20건씩 보기</strong><label>상태 <select onchange="adminListFilter('${type}',this.value)">${opts.map(([v,t])=>`<option value="${v}" ${st.status===v?'selected':''}>${t}</option>`).join('')}</select></label></div>`;
   }
 
   window.adminListPage=function(type,delta){if(!state[type])return;state[type].page=Math.max(1,state[type].page+Number(delta||0));load(type);};
@@ -63,21 +63,21 @@
   window.loadAdminReports=async function(){
     ensureStyles();if(typeof isAdminUser==='function'&&!isAdminUser())return;const box=document.getElementById('adminPanelContent');if(!box)return;adminMessage('신고 목록을 불러오는 중입니다.');
     const st=state.reports;
-    try{const {data,error}=await supabaseClient.rpc('admin_page_reports',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('reports',total)+(rows.length?rows.map(reportCard).join(''):'<p class="admin-empty">해당 조건의 신고가 없습니다.</p>')+pager('reports',total);adminMessage('신고 전체 기록을 100건씩 페이지로 표시합니다. 처리된 신고도 기록에서 사라지지 않습니다.');if(typeof loadAdminDashboard==='function')await loadAdminDashboard();}
+    try{const {data,error}=await supabaseClient.rpc('admin_page_reports',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('reports',total)+(rows.length?rows.map(reportCard).join(''):'<p class="admin-empty">해당 조건의 신고가 없습니다.</p>')+pager('reports',total);adminMessage('신고 전체 기록을 20건씩 페이지로 표시합니다. 처리된 신고도 기록에서 사라지지 않습니다.');if(typeof loadAdminDashboard==='function')await loadAdminDashboard();}
     catch(e){console.warn('신고 페이지 RPC 실패, 기존 목록으로 복귀:',e);if(old.reports)return old.reports();}
   };
 
   function postCard(p){const st=String(p.status||'').toUpperCase();return `<article class="admin-item"><div class="admin-item-head"><strong>#${esc(p.id)} · ${esc(p.title||'제목 없음')}</strong><span class="admin-status ${statusClass(st)}">${esc(contentKo(st))}</span></div><p>${esc(p.category||'')} · ${esc(p.business_type||'')} · ${esc(date(p.created_at))}</p><small>작성자 ID: ${esc(p.user_id||'')}</small><div class="admin-item-actions"><button type="button" onclick="adminViewPost('${esc(p.id)}')">게시글 보기</button>${st==='ACTIVE'?`<button onclick="setAdminContentStatus('posts','${esc(p.id)}','HIDDEN')">숨김</button><button onclick="setAdminContentStatus('posts','${esc(p.id)}','DELETED')">삭제 처리</button>`:st==='HIDDEN'?`<button onclick="setAdminContentStatus('posts','${esc(p.id)}','ACTIVE')">다시 공개</button><button onclick="setAdminContentStatus('posts','${esc(p.id)}','DELETED')">삭제 처리</button>`:`<button onclick="setAdminContentStatus('posts','${esc(p.id)}','ACTIVE')">복구</button>`}</div></article>`;}
   window.loadAdminPosts=async function(){
     ensureStyles();if(typeof isAdminUser==='function'&&!isAdminUser())return;const box=document.getElementById('adminPanelContent');if(!box)return;adminMessage('게시글을 불러오는 중입니다.');const st=state.posts;
-    try{const {data,error}=await supabaseClient.rpc('admin_page_posts',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('posts',total)+(rows.length?rows.map(postCard).join(''):'<p class="admin-empty">해당 조건의 게시글이 없습니다.</p>')+pager('posts',total);adminMessage('게시글 전체 기록을 100건씩 페이지로 표시합니다.');}
+    try{const {data,error}=await supabaseClient.rpc('admin_page_posts',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('posts',total)+(rows.length?rows.map(postCard).join(''):'<p class="admin-empty">해당 조건의 게시글이 없습니다.</p>')+pager('posts',total);adminMessage('게시글 전체 기록을 20건씩 페이지로 표시합니다.');}
     catch(e){console.warn('게시글 페이지 RPC 실패, 기존 목록으로 복귀:',e);if(old.posts)return old.posts();}
   };
 
   function commentCard(c){const st=String(c.status||'').toUpperCase();return `<article class="admin-item"><div class="admin-item-head"><strong>댓글 #${esc(c.id)} · 게시글 #${esc(c.post_id)}</strong><span class="admin-status ${statusClass(st)}">${esc(contentKo(st))}</span></div><p>${esc(c.content||'')}</p><small>작성자 ID: ${esc(c.user_id||'')} · ${esc(date(c.created_at))}</small><div class="admin-item-actions"><button type="button" onclick="adminViewPost('${esc(c.post_id)}')">원본 게시글 보기</button>${st==='ACTIVE'?`<button onclick="setAdminContentStatus('comments','${esc(c.id)}','HIDDEN')">숨김</button><button onclick="setAdminContentStatus('comments','${esc(c.id)}','DELETED')">삭제 처리</button>`:st==='HIDDEN'?`<button onclick="setAdminContentStatus('comments','${esc(c.id)}','ACTIVE')">다시 공개</button><button onclick="setAdminContentStatus('comments','${esc(c.id)}','DELETED')">삭제 처리</button>`:`<button onclick="setAdminContentStatus('comments','${esc(c.id)}','ACTIVE')">복구</button>`}</div></article>`;}
   window.loadAdminComments=async function(){
     ensureStyles();if(typeof isAdminUser==='function'&&!isAdminUser())return;const box=document.getElementById('adminPanelContent');if(!box)return;adminMessage('댓글을 불러오는 중입니다.');const st=state.comments;
-    try{const {data,error}=await supabaseClient.rpc('admin_page_comments',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('comments',total)+(rows.length?rows.map(commentCard).join(''):'<p class="admin-empty">해당 조건의 댓글이 없습니다.</p>')+pager('comments',total);adminMessage('댓글 전체 기록을 100건씩 페이지로 표시합니다. 숨김·삭제 댓글도 포함됩니다.');}
+    try{const {data,error}=await supabaseClient.rpc('admin_page_comments',{p_page:st.page,p_page_size:PAGE_SIZE,p_status:st.status});if(error)throw error;const rows=data?.rows||[],total=Number(data?.total||0);box.innerHTML=toolbar('comments',total)+(rows.length?rows.map(commentCard).join(''):'<p class="admin-empty">해당 조건의 댓글이 없습니다.</p>')+pager('comments',total);adminMessage('댓글 전체 기록을 20건씩 페이지로 표시합니다. 숨김·삭제 댓글도 포함됩니다.');}
     catch(e){console.warn('댓글 페이지 RPC 실패, 기존 목록으로 복귀:',e);if(old.comments)return old.comments();}
   };
 
