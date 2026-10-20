@@ -12,27 +12,36 @@
       .mypage-pagination button{padding:8px 12px;border:1px solid #d1d5db;background:#fff;border-radius:8px;font-weight:800;cursor:pointer;}
       .mypage-pagination button:disabled{opacity:.4;cursor:not-allowed;}
       .mypage-page-info{font-size:13px;color:#6b7280;font-weight:700;}
-      #ownerPostEditButton{margin-right:8px;}
+      #ownerPostActions{display:flex;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap;}
     `;
     document.head.appendChild(s);
   }
 
-  function addDetailEditButton(){
+  function normalizeOwnerPostButtons(){
     const actions=document.getElementById('ownerPostActions');
-    if(!actions||document.getElementById('ownerPostEditButton'))return;
-    const btn=document.createElement('button');
-    btn.id='ownerPostEditButton';
-    btn.type='button';
-    btn.textContent='✏️ 수정';
-    btn.onclick=window.editCurrentPostFromDetail;
-    actions.insertBefore(btn,actions.firstChild);
+    if(!actions)return;
+    let edit=document.getElementById('ownerPostEditButton');
+    if(!edit){
+      edit=document.createElement('button');
+      edit.id='ownerPostEditButton';
+      edit.type='button';
+      edit.onclick=window.editCurrentPostFromDetail;
+      actions.insertBefore(edit,actions.firstChild);
+    }
+    edit.className='comment-edit-button';
+    edit.textContent='✏️ 수정';
+
+    const del=actions.querySelector('[onclick="deleteMyPost()"]')||actions.querySelector('.post-delete-button');
+    if(del){
+      del.className='comment-delete-button';
+      del.textContent='🗑️ 삭제';
+    }
   }
 
   window.editCurrentPostFromDetail=async function(){
     if(!currentUser||!currentPostId)return;
     const id=currentPostId;
     await editMyPostFromPage(id);
-    if(currentPostId&&Number(currentPostId)===Number(id))await openPostDetail(id);
   };
 
   function pager(type,total){
@@ -104,6 +113,11 @@
     window.openMyPage=function(){state.posts=1;state.comments=1;return previousOpenMyPage.apply(this,arguments);};
   }
 
+  const previousOpenPostDetail=window.openPostDetail;
+  if(typeof previousOpenPostDetail==='function'){
+    window.openPostDetail=async function(){const result=await previousOpenPostDetail.apply(this,arguments);normalizeOwnerPostButtons();return result;};
+  }
+
   ensureStyles();
-  addDetailEditButton();
+  normalizeOwnerPostButtons();
 })();
