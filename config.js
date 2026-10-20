@@ -22,6 +22,6 @@ const supabaseClient = window.supabase.createClient(
 window.addEventListener("load",function(){
   const script=document.createElement("script");
   /* 파일 수정 시 버전을 올려 브라우저가 이전 보완 스크립트를 재사용하지 않도록 합니다. */
-  script.src="admin-comment-fix.js?v=20261020-7";
+  script.src="admin-comment-fix.js?v=20261020-8";
   document.body.appendChild(script);
 });
