@@ -27,116 +27,76 @@
     const contentEl=document.getElementById('detailContent');
     const actions=document.getElementById('ownerPostActions');
     if(!titleEl||!contentEl||!actions)return;
-
     postEditing=true;
     const oldTitle=titleEl.textContent||'';
     const oldContent=contentEl.textContent||'';
     titleEl.style.display='none';
     contentEl.style.display='none';
-
     const titleInput=document.createElement('input');
-    titleInput.id='inlinePostTitle';
-    titleInput.className='inline-edit-title';
-    titleInput.type='text';
-    titleInput.maxLength=100;
-    titleInput.value=oldTitle;
-    titleEl.insertAdjacentElement('afterend',titleInput);
-
+    titleInput.id='inlinePostTitle';titleInput.className='inline-edit-title';titleInput.type='text';titleInput.maxLength=100;titleInput.value=oldTitle;titleEl.insertAdjacentElement('afterend',titleInput);
     const contentInput=document.createElement('textarea');
-    contentInput.id='inlinePostContent';
-    contentInput.className='inline-edit-textarea';
-    contentInput.maxLength=10000;
-    contentInput.value=oldContent;
-    contentEl.insertAdjacentElement('afterend',contentInput);
-
+    contentInput.id='inlinePostContent';contentInput.className='inline-edit-textarea';contentInput.maxLength=10000;contentInput.value=oldContent;contentEl.insertAdjacentElement('afterend',contentInput);
     actions.dataset.originalHtml=actions.innerHTML;
     actions.innerHTML='<button type="button" class="comment-edit-button" onclick="saveInlinePostEdit()">💾 저장</button><button type="button" class="comment-delete-button" onclick="cancelInlinePostEdit()">취소</button>';
-    titleInput.focus();
-    titleInput.select();
+    titleInput.focus();titleInput.select();
   };
 
   window.cancelInlinePostEdit=function(){
-    const titleEl=document.getElementById('detailTitle');
-    const contentEl=document.getElementById('detailContent');
-    const actions=document.getElementById('ownerPostActions');
-    document.getElementById('inlinePostTitle')?.remove();
-    document.getElementById('inlinePostContent')?.remove();
-    document.getElementById('inlinePostEditError')?.remove();
-    if(titleEl)titleEl.style.display='';
-    if(contentEl)contentEl.style.display='';
+    const titleEl=document.getElementById('detailTitle'),contentEl=document.getElementById('detailContent'),actions=document.getElementById('ownerPostActions');
+    document.getElementById('inlinePostTitle')?.remove();document.getElementById('inlinePostContent')?.remove();document.getElementById('inlinePostEditError')?.remove();
+    if(titleEl)titleEl.style.display='';if(contentEl)contentEl.style.display='';
     if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}
-    postEditing=false;
-    bindDetailEditButton();
+    postEditing=false;bindDetailEditButton();
   };
 
   window.saveInlinePostEdit=async function(){
     if(!currentUser||!currentPostId)return;
-    const title=(document.getElementById('inlinePostTitle')?.value||'').trim();
-    const content=(document.getElementById('inlinePostContent')?.value||'').trim();
-    const actions=document.getElementById('ownerPostActions');
+    const title=(document.getElementById('inlinePostTitle')?.value||'').trim(),content=(document.getElementById('inlinePostContent')?.value||'').trim(),actions=document.getElementById('ownerPostActions');
     if(title.length<2||title.length>100){showPostError('제목은 2~100자로 입력해주세요.');return;}
     if(content.length<5){showPostError('내용은 5자 이상 입력해주세요.');return;}
     try{
       if(actions)actions.querySelectorAll('button').forEach(b=>b.disabled=true);
       const {data,error}=await supabaseClient.from('posts').update({title,content,updated_at:new Date().toISOString()}).eq('id',currentPostId).eq('user_id',currentUser.id).eq('status','ACTIVE').select('id,title,content').maybeSingle();
-      if(error)throw error;
-      if(!data)throw new Error('수정 권한을 확인할 수 없습니다.');
+      if(error)throw error;if(!data)throw new Error('수정 권한을 확인할 수 없습니다.');
       const titleEl=document.getElementById('detailTitle'),contentEl=document.getElementById('detailContent');
-      if(titleEl)titleEl.textContent=data.title||title;
-      if(contentEl)contentEl.textContent=data.content||content;
+      if(titleEl)titleEl.textContent=data.title||title;if(contentEl)contentEl.textContent=data.content||content;
       window.cancelInlinePostEdit();
       if(typeof loadPosts==='function')await loadPosts();
       if(document.body.classList.contains('mypage-active')&&typeof loadMyPage==='function')await loadMyPage();
     }catch(e){console.error('게시글 인라인 수정 오류:',e);showPostError('게시글 수정에 실패했습니다. 다시 시도해주세요.');if(actions)actions.querySelectorAll('button').forEach(b=>b.disabled=false);}
   };
 
-  function showPostError(message){
-    let el=document.getElementById('inlinePostEditError');
-    if(!el){el=document.createElement('div');el.id='inlinePostEditError';el.className='inline-edit-error';document.getElementById('ownerPostActions')?.appendChild(el);}
-    el.textContent=message;
-  }
+  function showPostError(message){let el=document.getElementById('inlinePostEditError');if(!el){el=document.createElement('div');el.id='inlinePostEditError';el.className='inline-edit-error';document.getElementById('ownerPostActions')?.appendChild(el);}el.textContent=message;}
 
   window.editMyComment=async function(commentId){
     if(!currentUser)return;
-    const item=document.getElementById('admin-reported-comment-'+commentId);
-    if(!item)return;
-    const contentEl=item.querySelector('.comment-content');
-    const actions=item.querySelector('.comment-actions');
-    if(!contentEl||!actions||item.dataset.editing==='1')return;
-    item.dataset.editing='1';
-    const original=contentEl.textContent||'';
-    contentEl.dataset.originalText=original;
+    const item=document.getElementById('admin-reported-comment-'+commentId);if(!item)return;
+    const contentEl=item.querySelector('.comment-content'),actions=item.querySelector('.comment-actions');if(!contentEl||!actions||item.dataset.editing==='1')return;
+    item.dataset.editing='1';const original=contentEl.textContent||'';contentEl.dataset.originalText=original;
     contentEl.innerHTML='<textarea class="comment-inline-editor" maxlength="1000">'+escTextarea(original)+'</textarea><div class="inline-edit-error" style="display:none"></div>';
     actions.dataset.originalHtml=actions.innerHTML;
     actions.innerHTML='<button type="button" class="comment-edit-button" onclick="saveInlineCommentEdit('+Number(commentId)+')">💾 저장</button><button type="button" class="comment-delete-button" onclick="cancelInlineCommentEdit('+Number(commentId)+')">취소</button>';
     const input=contentEl.querySelector('textarea');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}
   };
 
-  window.cancelInlineCommentEdit=function(commentId){
-    const item=document.getElementById('admin-reported-comment-'+commentId);if(!item)return;
-    const contentEl=item.querySelector('.comment-content'),actions=item.querySelector('.comment-actions');
-    if(contentEl)contentEl.textContent=contentEl.dataset.originalText||'';
-    if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}
-    delete item.dataset.editing;
-  };
+  window.cancelInlineCommentEdit=function(commentId){const item=document.getElementById('admin-reported-comment-'+commentId);if(!item)return;const contentEl=item.querySelector('.comment-content'),actions=item.querySelector('.comment-actions');if(contentEl)contentEl.textContent=contentEl.dataset.originalText||'';if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}delete item.dataset.editing;};
 
   window.saveInlineCommentEdit=async function(commentId){
     const item=document.getElementById('admin-reported-comment-'+commentId);if(!item||!currentUser)return;
-    const contentEl=item.querySelector('.comment-content'),actions=item.querySelector('.comment-actions'),input=contentEl?.querySelector('textarea');
-    const content=(input?.value||'').trim();
-    const errorEl=contentEl?.querySelector('.inline-edit-error');
+    const contentEl=item.querySelector('.comment-content'),actions=item.querySelector('.comment-actions'),input=contentEl?.querySelector('textarea'),content=(input?.value||'').trim(),errorEl=contentEl?.querySelector('.inline-edit-error');
     if(content.length<2||content.length>1000){if(errorEl){errorEl.style.display='block';errorEl.textContent='댓글은 2~1000자로 입력해주세요.';}return;}
     try{
       if(actions)actions.querySelectorAll('button').forEach(b=>b.disabled=true);
       const {data,error}=await supabaseClient.from('comments').update({content}).eq('id',commentId).eq('user_id',currentUser.id).eq('status','ACTIVE').select('id,content').maybeSingle();
       if(error)throw error;if(!data)throw new Error('수정 권한을 확인할 수 없습니다.');
       if(contentEl){contentEl.dataset.originalText=data.content||content;contentEl.textContent=data.content||content;}
-      if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}
-      delete item.dataset.editing;
+      if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}delete item.dataset.editing;
       if(document.body.classList.contains('mypage-active')&&typeof loadMyPage==='function')await loadMyPage();
     }catch(e){console.error('댓글 인라인 수정 오류:',e);if(errorEl){errorEl.style.display='block';errorEl.textContent='댓글 수정에 실패했습니다. 다시 시도해주세요.';}if(actions)actions.querySelectorAll('button').forEach(b=>b.disabled=false);}
   };
 
-  ensureStyles();
-  bindDetailEditButton();
+  window.editPostFromMyPageInline=async function(postId){if(typeof openPostDetail!=='function')return;await openPostDetail(postId);window.editCurrentPostFromDetail();};
+  window.editCommentFromMyPageInline=async function(commentId,postId){if(typeof openPostDetail!=='function')return;await openPostDetail(postId);setTimeout(()=>window.editMyComment(commentId),0);};
+
+  ensureStyles();bindDetailEditButton();
 })();
