@@ -55,6 +55,11 @@ window.addEventListener("load",function(){
                       operatingDb.onload=function(){
                         const adminOperating=document.createElement("script");
                         adminOperating.src="admin-operating-content.js?v=20261020-1";
+                        adminOperating.onload=function(){
+                          const commentThread=document.createElement("script");
+                          commentThread.src="comment-thread-reactions.js?v=20261020-1";
+                          document.body.appendChild(commentThread);
+                        };
                         document.body.appendChild(adminOperating);
                       };
                       document.body.appendChild(operatingDb);
