@@ -10,10 +10,6 @@
       .inline-edit-title{width:100%;padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;font:inherit;font-size:22px;font-weight:800;line-height:1.4;outline:none;}
       .inline-edit-title:focus,.inline-edit-textarea:focus{border-color:#111827;box-shadow:0 0 0 2px rgba(17,24,39,.06);}
       .inline-edit-textarea{width:100%;min-height:220px;resize:vertical;padding:14px;border:1px solid #d1d5db;border-radius:10px;font:inherit;font-size:15px;line-height:1.7;outline:none;background:#fff;}
-      .inline-edit-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:10px;flex-wrap:wrap;}
-      .inline-edit-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:13px;font-weight:700;cursor:pointer;}
-      .inline-edit-actions .save{background:#111827;border-color:#111827;color:#fff;}
-      .inline-edit-actions .cancel:hover{background:#f9fafb;}
       .inline-edit-error{margin-top:8px;color:#dc2626;font-size:12px;text-align:right;}
       .comment-inline-editor{width:100%;min-height:92px;resize:vertical;padding:10px 11px;border:1px solid #d1d5db;border-radius:8px;font:inherit;font-size:14px;line-height:1.6;outline:none;}
       @media(max-width:600px){.inline-edit-title{font-size:19px}.inline-edit-textarea{min-height:180px}}
@@ -21,7 +17,7 @@
     document.head.appendChild(s);
   }
 
-  function escAttr(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function escTextarea(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
   window.editCurrentPostFromDetail=async function(){
     if(postEditing||!currentUser||!currentPostId)return;
@@ -33,9 +29,6 @@
     postEditing=true;
     const oldTitle=titleEl.textContent||'';
     const oldContent=contentEl.textContent||'';
-    titleEl.dataset.originalText=oldTitle;
-    contentEl.dataset.originalText=oldContent;
-
     titleEl.style.display='none';
     contentEl.style.display='none';
 
@@ -110,7 +103,7 @@
     item.dataset.editing='1';
     const original=contentEl.textContent||'';
     contentEl.dataset.originalText=original;
-    contentEl.innerHTML='<textarea class="comment-inline-editor" maxlength="1000">'+escAttr(original)+'</textarea><div class="inline-edit-error" style="display:none"></div>';
+    contentEl.innerHTML='<textarea class="comment-inline-editor" maxlength="1000">'+escTextarea(original)+'</textarea><div class="inline-edit-error" style="display:none"></div>';
     actions.dataset.originalHtml=actions.innerHTML;
     actions.innerHTML='<button type="button" class="comment-edit-button" onclick="saveInlineCommentEdit('+Number(commentId)+')">💾 저장</button><button type="button" class="comment-delete-button" onclick="cancelInlineCommentEdit('+Number(commentId)+')">취소</button>';
     const input=contentEl.querySelector('textarea');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}
@@ -142,4 +135,6 @@
   };
 
   ensureStyles();
+  const detailEditButton=document.getElementById('ownerPostEditButton');
+  if(detailEditButton)detailEditButton.onclick=window.editCurrentPostFromDetail;
 })();
