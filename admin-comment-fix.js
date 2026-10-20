@@ -11,6 +11,13 @@
     return d.toLocaleDateString("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit"});
   }
 
+  function getAdminStatusLabel(status){
+    const value=String(status||"").toUpperCase();
+    if(value==="HIDDEN")return '<strong style="display:block;color:#b91c1c;margin-bottom:8px">🚨 관리자에 의해 숨김 처리된 댓글</strong>';
+    if(value==="DELETED")return '<strong style="display:block;color:#6b7280;margin-bottom:8px">🗑️ 삭제된 댓글</strong>';
+    return '<strong style="display:block;color:#b91c1c;margin-bottom:8px">🚨 신고 대상 댓글</strong>';
+  }
+
   window.adminViewComment=async function(id){
     if(typeof isAdminUser==="function"&&!isAdminUser())return;
     try{
@@ -35,11 +42,17 @@
         const card=document.createElement("div");
         card.id="admin-reported-comment-"+id;
         card.className="comment-item admin-reported-target";
-        card.style.cssText="border:2px dashed #b45309;background:#fffbeb;border-radius:12px;padding:12px;margin:10px 0;";
-        const hidden=String(data.status||"")!=="ACTIVE";
+        const status=String(data.status||"").toUpperCase();
+        if(status==="DELETED"){
+          card.style.cssText="border:2px dashed #6b7280;background:#f9fafb;border-radius:12px;padding:12px;margin:10px 0;";
+        }else if(status==="HIDDEN"){
+          card.style.cssText="border:2px dashed #b91c1c;background:#fff1f2;border-radius:12px;padding:12px;margin:10px 0;";
+        }else{
+          card.style.cssText="border:2px dashed #b45309;background:#fffbeb;border-radius:12px;padding:12px;margin:10px 0;";
+        }
         const author=data.is_anonymous===false?"사장님":"익명 사장님";
         const date=formatDate(data.created_at);
-        card.innerHTML=(hidden?'<strong style="display:block;color:#92400e;margin-bottom:8px">🔒 관리자 확인용 댓글 (숨김 처리됨)</strong>':'<strong style="display:block;color:#b91c1c;margin-bottom:8px">🚨 신고 대상 댓글</strong>')+
+        card.innerHTML=getAdminStatusLabel(status)+
           '<div class="comment-header"><span class="comment-author">'+esc(author)+'</span><span class="comment-date">'+esc(date)+'</span></div>'+
           '<div class="comment-content">'+esc(data.content||"내용 없음")+'</div>';
         const empty=list.querySelector(".post-empty");
