@@ -16,7 +16,6 @@ ALTER TABLE public.comments
   ADD COLUMN IF NOT EXISTS parent_comment_id bigint NULL,
   ADD COLUMN IF NOT EXISTS reply_to_user_id uuid NULL;
 
--- 자기참조 FK는 기존 댓글 삭제 시 답글 자체를 삭제하지 않고 연결만 해제
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -58,10 +57,12 @@ ALTER TABLE public.comment_reactions ENABLE ROW LEVEL SECURITY;
 
 -- C. comment_reactions RLS
 DROP POLICY IF EXISTS comment_reactions_select_all ON public.comment_reactions;
+DROP POLICY IF EXISTS comment_reactions_public_select ON public.comment_reactions;
+DROP POLICY IF EXISTS comment_reactions_admin_select ON public.comment_reactions;
 DROP POLICY IF EXISTS comment_reactions_insert_own ON public.comment_reactions;
 DROP POLICY IF EXISTS comment_reactions_delete_own ON public.comment_reactions;
 
-CREATE POLICY comment_reactions_select_all
+CREATE POLICY comment_reactions_public_select
 ON public.comment_reactions
 FOR SELECT
 TO anon, authenticated
@@ -73,8 +74,13 @@ USING (
       AND c.status='ACTIVE'
       AND p.status='ACTIVE'
   )
-  OR public.is_active_admin()
 );
+
+CREATE POLICY comment_reactions_admin_select
+ON public.comment_reactions
+FOR SELECT
+TO authenticated
+USING (public.is_active_admin());
 
 CREATE POLICY comment_reactions_insert_own
 ON public.comment_reactions
@@ -97,8 +103,48 @@ FOR DELETE
 TO authenticated
 USING (user_id=(SELECT auth.uid()));
 
--- D. comments INSERT 보강
--- 기존 정책 이름이 달라도 안전하게 우리 정책을 별도 추가.
+-- D. comments 답글 INSERT 무결성 보호
+CREATE OR REPLACE FUNCTION public.protect_comment_reply_fields()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=''
+AS $$
+DECLARE
+  v_parent public.comments%ROWTYPE;
+BEGIN
+  IF NEW.parent_comment_id IS NULL THEN
+    NEW.reply_to_user_id := NULL;
+    RETURN NEW;
+  END IF;
+
+  SELECT * INTO v_parent
+  FROM public.comments
+  WHERE id=NEW.parent_comment_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION '답글 대상 댓글을 찾을 수 없습니다.' USING ERRCODE='23503';
+  END IF;
+
+  IF v_parent.post_id <> NEW.post_id OR v_parent.status <> 'ACTIVE' THEN
+    RAISE EXCEPTION '답글을 작성할 수 없는 댓글입니다.' USING ERRCODE='42501';
+  END IF;
+
+  NEW.reply_to_user_id := v_parent.user_id;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.protect_comment_reply_fields() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.protect_comment_reply_fields() FROM anon;
+REVOKE ALL ON FUNCTION public.protect_comment_reply_fields() FROM authenticated;
+
+DROP TRIGGER IF EXISTS trg_protect_comment_reply_fields ON public.comments;
+CREATE TRIGGER trg_protect_comment_reply_fields
+BEFORE INSERT ON public.comments
+FOR EACH ROW
+EXECUTE FUNCTION public.protect_comment_reply_fields();
+
 DROP POLICY IF EXISTS comments_insert_reply_own ON public.comments;
 CREATE POLICY comments_insert_reply_own
 ON public.comments
@@ -111,19 +157,6 @@ WITH CHECK (
     SELECT 1 FROM public.posts p
     WHERE p.id=post_id AND p.status='ACTIVE'
   )
-  AND (
-    parent_comment_id IS NULL
-    OR EXISTS (
-      SELECT 1 FROM public.comments parent
-      WHERE parent.id=parent_comment_id
-        AND parent.post_id=post_id
-        AND parent.status='ACTIVE'
-    )
-  )
-  AND (
-    parent_comment_id IS NOT NULL
-    OR reply_to_user_id IS NULL
-  )
 );
 
 -- E. 최소 권한
@@ -133,7 +166,6 @@ GRANT SELECT ON TABLE public.comment_reactions TO anon, authenticated;
 GRANT INSERT (comment_id,user_id,reaction_type) ON TABLE public.comment_reactions TO authenticated;
 GRANT DELETE ON TABLE public.comment_reactions TO authenticated;
 
--- comments는 기존 권한을 유지하되 답글 필드 INSERT 권한 추가
 GRANT INSERT (post_id,user_id,content,is_anonymous,status,parent_comment_id,reply_to_user_id)
   ON TABLE public.comments TO authenticated;
 
