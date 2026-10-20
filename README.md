@@ -4,8 +4,8 @@
 
 ## 프로젝트 진행 현황
 
-- **완료:** 1~10단계
-- **현재 진행:** 11단계 — 관리자 보안/RLS 하드닝
+- **완료:** 1~11단계
+- **다음 작업:** 게시글 본문 수정 UI + 페이지네이션 정리
 - **작업 원칙:** 실제 코드와 Supabase 동작을 확인한 뒤 한 단계씩 진행합니다. 기존 기능과 디자인을 불필요하게 깨뜨리지 않고, 구현 후 실제 사용자 테스트를 거쳐 완료 처리합니다.
 
 ## 전체 작업 순서 (1~17단계)
@@ -22,7 +22,7 @@
 | 8 | 회원 마이페이지 | 프로필·닉네임·업종 수정, 내 게시글·댓글·공감한 글, 계정 관련 기능 | 완료 |
 | 9 | PC·모바일 UI 다듬기 | 화면 크기별 레이아웃, 버튼·입력창·모달·게시글·댓글 가독성, 모바일 사용성 점검 | 완료 |
 | 10 | 관리자 시스템 | 신고·게시글·댓글·회원 관리, 관리자 통합검색, 상태 한글화, 숨김·삭제·복구, 원문 즉시 조치, 회원 활동 상세 | 완료 |
-| 11 | 관리자 보안 | 관리자 권한 검증, RLS 정책 점검·보완, 관리자 전용 RPC·함수 검증, 서버 측 권한 경계 정리 | **진행 중 — 3차 RLS 하드닝 SQL 작성 완료** |
+| 11 | 관리자 보안 | 관리자 권한 검증, 핵심 테이블 RLS, 최소 권한, 관리자 RPC/함수 검증, 일반회원 우회 테스트 | **완료** |
 | 12 | 공지·운영 페이지 | 공지사항, 상단 고정, 이벤트, 이용규칙, 개인정보처리방침, 이용약관 | 예정 |
 | 13 | 알림 | 댓글·공감 등 주요 활동 알림과 읽음 상태 | 예정 |
 | 14 | 이미지 업로드 | Supabase Storage 연동, 파일 형식·용량 제한, 업로드 권한 및 보안 처리 | 예정 |
@@ -59,7 +59,8 @@ py -m http.server 3000
 - 카테고리·업종
 - 익명 작성
 - 조회수
-- 본인 글 수정/삭제 관련 처리
+- 마이페이지에서 본인 글 수정 가능
+- **게시글 본문 상세의 작성자용 수정 버튼은 아직 없음 — 다음 작업에서 추가**
 - 상태: `ACTIVE / HIDDEN / DELETED`
 
 ### 댓글
@@ -99,91 +100,64 @@ py -m http.server 3000
 - 역할/상태/업종 필터 및 회원 검색
 - 서버 전체 통합검색
 
+> **다음 페이지네이션 정리에서 관리자 신고/게시글/댓글/회원 목록을 페이지당 20개로 변경 예정.**
+
 ## 4. 관리자 전용 Supabase RPC
 
-기존 함수:
 - `admin_get_report_target`
 - `admin_set_report_target_status`
 - `admin_list_comments`
 - `admin_list_post_comments`
-
-페이지네이션/검색 함수:
 - `admin_page_reports`
 - `admin_page_posts`
 - `admin_page_comments`
 - `admin_unified_search`
 - `admin_page_members`
 
-관리자용 신규 RPC는 `SECURITY DEFINER`를 사용하고 함수 내부에서 다음 조건을 검사합니다.
-- `auth.uid()`와 일치하는 프로필
-- `role IN ('ADMIN','MODERATOR')`
-- `status = 'ACTIVE'`
+관리자용 RPC는 `SECURITY DEFINER`를 사용하고 함수 내부에서 `auth.uid()`, 관리자/운영자 역할, ACTIVE 상태를 검사합니다. 관리자 RPC의 `anon` 실행권한은 회수했고 브라우저 일반회원이 호출해도 함수 내부 관리자 검증에서 차단됩니다.
 
-관리자 RPC의 `anon` 실행권한은 회수했고 `authenticated`만 실행 가능하도록 정리했습니다.
-
-## 5. 11단계 관리자 보안
+## 5. 11단계 관리자 보안 — 완료
 
 ### 1차 — 관리자 함수/프로필 보안
 
 `supabase-step11-security-hardening.sql`
 
-주요 내용:
-
-1. `public.is_active_admin()` 공통 관리자 판별 함수
-2. `profiles.role/status` 보호 트리거
-3. 관리자 RPC `PUBLIC`/`anon` 실행권한 회수
-4. `SECURITY DEFINER + search_path=""` 점검
+- `public.is_active_admin()` 공통 관리자 판별 함수
+- `profiles.role/status` 보호 트리거
+- 관리자 RPC `PUBLIC/anon` 실행권한 회수
+- `SECURITY DEFINER + search_path=""` 확인
 
 ### 2차 — RLS 감사
 
 `supabase-step11-rls-audit.sql`
 
-감사 결과 확인된 상태:
-
-- `comments` — RLS 활성
-- `reports` — RLS 활성
-- `posts` — **RLS 비활성 확인**
-- `profiles` — **RLS 비활성 확인**
-- `reactions` — **RLS 비활성 확인**
-- `posts/profiles/reactions`에 `anon/authenticated` 과도한 테이블 권한이 존재함을 확인
+감사에서 `posts`, `profiles`, `reactions`의 RLS가 비활성이고 `anon/authenticated`에 과도한 테이블 권한이 있음을 확인했습니다.
 
 ### 3차 — 주요 테이블 RLS 하드닝
 
 `supabase-step11-rls-hardening.sql`
 
-이 SQL은 다음을 수행합니다.
+- `profiles/posts/comments/reports/reactions` 핵심 5개 테이블 RLS 활성 확인
+- `posts/profiles/reactions` 최소 권한 적용
+- 게시글 공개 조회 유지
+- 게시글 작성은 로그인 회원 본인 `user_id + ACTIVE`만 허용
+- 게시글 수정/소프트삭제는 DB 보호 트리거로 작성자 권한 검증
+- 공개 조회수는 `view_count +1` 변경만 허용
+- 프로필은 본인 닉네임·업종·소개 수정만 허용
+- 브라우저에서 `profiles.role/status` 직접 변경 차단
+- 공감은 공개 조회, 등록/취소는 로그인 회원 본인만 허용
+- 신고 INSERT는 본인 `reporter_id + PENDING`으로 제한
+- 관리자 숨김/삭제 데이터 조회는 관리자 검증을 거침
 
-1. `posts`, `profiles`, `reactions` RLS 활성화
-2. `anon/authenticated`의 불필요한 `TRUNCATE/TRIGGER/REFERENCES/DELETE/UPDATE` 등 권한 회수
-3. 게시글 공개 조회는 유지
-4. 게시글 작성은 로그인 회원 본인 `user_id + ACTIVE`만 허용
-5. 게시글 수정/소프트삭제는 작성자 본인만 허용
-6. 공개 조회수 증가는 `view_count +1` 변경만 허용하고 다른 필드 변조는 DB 트리거에서 차단
-7. 관리자/서비스 작업은 별도 관리자 검증으로 허용
-8. 프로필은 본인 조회/본인 닉네임·업종·소개 수정만 허용
-9. 관리자만 전체 프로필 조회 가능
-10. 브라우저에는 `profiles.role/status` UPDATE 컬럼 권한을 주지 않음
-11. 공감은 전체 조회 가능, 등록/취소는 로그인 회원 본인만 허용
-12. 신고 신규 INSERT는 반드시 `reporter_id = auth.uid()` 및 `status = PENDING`으로 제한
-13. 관리자에게 숨김/삭제 댓글 전체 조회 정책 추가
-14. 실행 후 핵심 RLS/GRANT/POLICY 상태를 JSON으로 출력
+### 실제 검증 완료
 
-### 11단계 완료 조건
-
-- [ ] `profiles/posts/comments/reports/reactions` RLS 모두 활성화
-- [ ] 비로그인 사용자가 게시글/댓글/반응 공개 조회 가능
-- [ ] 비로그인 사용자가 게시글/프로필/반응 데이터를 임의 수정할 수 없음
-- [ ] 로그인 회원이 자기 게시글 작성/수정/삭제 가능
-- [ ] 로그인 회원이 다른 회원 게시글을 수정/삭제할 수 없음
-- [ ] 로그인 회원이 자기 프로필 닉네임/업종/소개 수정 가능
-- [ ] 로그인 회원이 `profiles.role/status` 변경 불가
-- [ ] 공감 등록/취소가 본인 행에서만 가능
-- [ ] 신고 INSERT가 `PENDING`만 허용
-- [ ] 일반 회원이 관리자 전용 RPC 직접 호출 시 권한 오류
-- [ ] 관리자 화면 신고/게시글/댓글/회원 기능 정상
-- [ ] 관리자 통합검색/페이지네이션 정상
-- [ ] 관리자 SECURITY DEFINER 함수에 고정 `search_path` 설정
-- [ ] 관리자 RPC `anon/PUBLIC` 실행권한 없음
+- 핵심 5개 테이블 RLS 모두 `true` 확인
+- 비로그인/일반회원/관리자 기존 사이트 기능 정상 확인
+- 일반회원이 자신의 `profiles.role`을 `ADMIN`으로 직접 변경 시도 → **HTTP 403 차단 확인**
+- 일반회원이 `admin_page_members` 관리자 RPC 직접 호출 시도 → **HTTP 403 차단 확인**
+- 관리자 RPC `anon` 실행권한 없음 확인
+- 관리자 함수 `SECURITY DEFINER + search_path=""` 확인
+- `config.js`에는 브라우저용 publishable/anon 키만 있고 `service_role` 키는 두지 않음
 
 ## 6. 보안 원칙
 
@@ -195,16 +169,21 @@ py -m http.server 3000
 - 일반 회원이 자기 프로필을 수정할 수 있어도 `role/status`는 DB 레벨에서 보호합니다.
 - 테이블 권한(GRANT)과 RLS 정책을 함께 최소화합니다.
 
-## 7. 이후 보안 작업
+## 7. 11단계 다음 작업 순서
 
-11단계 후반에서 다음을 검토합니다.
+1. **게시글 본문 상세에 본인 작성글 `수정` 버튼 추가**
+2. **마이페이지 `내가 작성한 게시글` 페이지당 5개 페이지네이션**
+3. **마이페이지 `내가 작성한 댓글` 페이지당 5개 페이지네이션**
+4. **관리자 회원목록 → 회원선택 → 회원정보에서 최근 게시글 5개 표시**
+5. **관리자 회원목록 → 회원선택 → 회원정보에서 최근 댓글 5개 표시**
+6. **관리자 신고/게시글/댓글/회원 페이지네이션을 페이지당 20개로 조정**
 
-1. 일반회원/비로그인 실제 브라우저 우회 테스트
-2. 관리자 상태 변경 감사 로그
-3. 회원 경고 이력 테이블 및 관리자 경고 기능
-4. 관리자 강제탈퇴 서버 기능
-5. 마이페이지 회원탈퇴 정책과 Auth 사용자 삭제 방식
-6. 탈퇴 회원 게시글/댓글 익명 보존 여부
+추후 별도 보안/회원관리 작업:
+- 관리자 상태 변경 감사 로그
+- 회원 경고 이력
+- 관리자 강제탈퇴 서버 기능
+- 마이페이지 회원탈퇴 및 Auth 사용자 삭제
+- 탈퇴 회원 게시글/댓글 보존·익명화 정책
 
 ## 8. 프로젝트 파일
 
@@ -221,25 +200,20 @@ py -m http.server 3000
 - `supabase-admin-members-pagination.sql` — 회원목록 관리자 RPC
 - `supabase-step11-security-hardening.sql` — 11단계 1차 관리자 함수/프로필 보안
 - `supabase-step11-rls-audit.sql` — 11단계 2차 RLS/GRANT/정책 감사
-- `supabase-step11-rls-hardening.sql` — **11단계 3차 주요 테이블 RLS/최소권한 하드닝**
+- `supabase-step11-rls-hardening.sql` — 11단계 3차 주요 테이블 RLS/최소권한 하드닝
 
 ## 9. 기본 테스트 체크리스트
 
-- [ ] 이메일 로그인·로그아웃
-- [ ] Google 로그인
-- [ ] Kakao 로그인
-- [ ] 게시글 작성·조회
-- [ ] 게시글 수정·삭제
-- [ ] 비로그인 게시글 조회수 증가
-- [ ] 댓글 작성·수정·삭제
-- [ ] 공감 반응 등록·취소
-- [ ] 게시글·댓글 신고
-- [ ] 마이페이지 프로필 수정
-- [ ] 관리자 신고/게시글/댓글/회원 관리
-- [ ] 관리자 목록 페이지 이동/필터
-- [ ] 관리자 통합검색
-- [ ] 회원 목록 및 회원 상세
-- [ ] PC·모바일 화면
+- [x] 게시글 작성·조회
+- [x] 비로그인 게시글 조회수 증가
+- [x] 댓글 작성·수정·삭제
+- [x] 공감 반응 등록·취소
+- [x] 게시글·댓글 신고
+- [x] 마이페이지 프로필 수정
+- [x] 관리자 신고/게시글/댓글/회원 관리
+- [x] 관리자 통합검색/페이지네이션
+- [x] 일반회원 role 직접 변경 차단
+- [x] 일반회원 관리자 RPC 직접 호출 차단
 
 ## 10. GitHub 저장소
 
