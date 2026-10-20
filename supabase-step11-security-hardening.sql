@@ -3,7 +3,7 @@
 -- 목적
 -- 1) 일반 회원이 profiles.role / profiles.status 를 직접 바꾸는 우회 차단
 -- 2) 관리자 판별 공통 함수 제공
--- 3) 관리자용 함수 실행권한 정리
+-- 3) 관리자용 함수 실행권한 정리 (anon 명시적 차단)
 -- 4) 현재 RLS / 정책 / 함수 보안상태 점검
 --
 -- Supabase SQL Editor에서 전체 실행하세요.
@@ -29,6 +29,7 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.is_active_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_active_admin() FROM anon;
 GRANT EXECUTE ON FUNCTION public.is_active_admin() TO authenticated;
 
 -- ------------------------------------------------------------
@@ -58,6 +59,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.protect_profile_security_fields() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.protect_profile_security_fields() FROM anon;
+REVOKE ALL ON FUNCTION public.protect_profile_security_fields() FROM authenticated;
 
 DROP TRIGGER IF EXISTS trg_protect_profile_security_fields
 ON public.profiles;
@@ -69,6 +72,7 @@ EXECUTE FUNCTION public.protect_profile_security_fields();
 
 -- ------------------------------------------------------------
 -- 3. 현재까지 사용하는 관리자 RPC 실행권한 재정리
+-- PUBLIC뿐 아니라 Supabase에서 남아 있을 수 있는 anon 직접 권한도 명시적으로 회수합니다.
 -- 존재하는 함수만 처리합니다.
 -- ------------------------------------------------------------
 DO $$
@@ -93,6 +97,7 @@ BEGIN
       )
   LOOP
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC', f);
+    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM anon', f);
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', f);
   END LOOP;
 END;
@@ -132,7 +137,11 @@ ORDER BY tablename, cmd, policyname;
 
 -- ------------------------------------------------------------
 -- 6. 관리자 함수 SECURITY DEFINER / search_path / ACL 점검
--- prosecdef=true, config에 search_path가 들어 있는지 확인합니다.
+-- 정상 기대값:
+-- - prosecdef = true
+-- - config = {search_path=""}
+-- - 관리자 RPC acl에는 authenticated=X 가 있고 anon=X 는 없어야 함
+-- - protect_profile_security_fields는 anon/authenticated 직접 실행권한이 없어야 함
 -- ------------------------------------------------------------
 SELECT
   n.nspname AS schema_name,
