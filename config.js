@@ -36,7 +36,7 @@ window.addEventListener("load",function(){
           members.src="admin-members-pagination.js?v=20261020-2";
           members.onload=function(){
             const mypage=document.createElement("script");
-            mypage.src="post-mypage-pagination.js?v=20261020-2";
+            mypage.src="post-mypage-pagination.js?v=20261020-3";
             mypage.onload=function(){
               const editRefresh=document.createElement("script");
               editRefresh.src="post-edit-refresh-fix.js?v=20261020-1";
@@ -45,7 +45,7 @@ window.addEventListener("load",function(){
                 memberActivity.src="admin-member-activity-pagination.js?v=20261020-1";
                 memberActivity.onload=function(){
                   const inlineEdit=document.createElement("script");
-                  inlineEdit.src="inline-edit.js?v=20261020-1";
+                  inlineEdit.src="inline-edit.js?v=20261020-2";
                   document.body.appendChild(inlineEdit);
                 };
                 document.body.appendChild(memberActivity);
