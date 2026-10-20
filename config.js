@@ -37,6 +37,11 @@ window.addEventListener("load",function(){
           members.onload=function(){
             const mypage=document.createElement("script");
             mypage.src="post-mypage-pagination.js?v=20261020-1";
+            mypage.onload=function(){
+              const editRefresh=document.createElement("script");
+              editRefresh.src="post-edit-refresh-fix.js?v=20261020-1";
+              document.body.appendChild(editRefresh);
+            };
             document.body.appendChild(mypage);
           };
           document.body.appendChild(members);
