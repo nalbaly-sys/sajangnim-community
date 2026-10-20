@@ -18,7 +18,7 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_CONFIG.anonKey
 );
 
-/* 관리자/마이페이지 보완 스크립트는 app.js 로드가 끝난 뒤 순서대로 적용 */
+/* 관리자/마이페이지/운영 보완 스크립트는 app.js 로드가 끝난 뒤 순서대로 적용 */
 window.addEventListener("load",function(){
   const script=document.createElement("script");
   script.src="admin-comment-fix.js?v=20261020-8";
@@ -46,6 +46,11 @@ window.addEventListener("load",function(){
                 memberActivity.onload=function(){
                   const inlineEdit=document.createElement("script");
                   inlineEdit.src="inline-edit.js?v=20261020-2";
+                  inlineEdit.onload=function(){
+                    const operating=document.createElement("script");
+                    operating.src="operating-pages.js?v=20261020-1";
+                    document.body.appendChild(operating);
+                  };
                   document.body.appendChild(inlineEdit);
                 };
                 document.body.appendChild(memberActivity);
