@@ -1,110 +1,99 @@
 -- ============================================================
--- STEP 11 관리자 보안 2차: RLS / 정책 전용 점검
+-- STEP 11 관리자 보안 2차: RLS / 정책 통합 점검
 -- 목적
--- 1) 주요 테이블 RLS 활성 여부 확인
--- 2) 실제 RLS 정책의 cmd / roles / qual / with_check 확인
--- 3) 테이블 직접 권한(grant) 확인
--- 4) 관리자 전용 RPC의 anon 차단 재확인
+-- Supabase SQL Editor가 여러 SELECT 중 마지막 결과만 보여주는 문제를 피하기 위해
+-- RLS 상태, 정책, 테이블 권한, profiles 보호 트리거, 관리자 함수 ACL을
+-- 하나의 JSON 결과로 통합해서 반환합니다.
 --
--- Supabase SQL Editor에서 전체 실행 후 결과를 복사해 확인합니다.
 -- 이 파일은 정책을 변경하지 않고 '점검만' 합니다.
 -- ============================================================
 
--- ------------------------------------------------------------
--- A. 주요 테이블 RLS 상태
--- rls_enabled는 모두 true인지 확인합니다.
--- force_rls는 false여도 일반 Supabase 클라이언트 보호에는 문제 없지만
--- 테이블 소유자까지 RLS를 강제할 필요가 있는지는 별도 판단합니다.
--- ------------------------------------------------------------
-SELECT
-  n.nspname AS schema_name,
-  c.relname AS table_name,
-  c.relrowsecurity AS rls_enabled,
-  c.relforcerowsecurity AS force_rls
-FROM pg_class c
-JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = 'public'
-  AND c.relkind = 'r'
-  AND c.relname IN ('profiles','posts','comments','reports','reactions')
-ORDER BY c.relname;
-
--- ------------------------------------------------------------
--- B. RLS 정책 전체
--- 특히 profiles UPDATE 정책과 reports SELECT/UPDATE 정책을 집중 확인합니다.
--- ------------------------------------------------------------
-SELECT
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd,
-  qual,
-  with_check
-FROM pg_policies
-WHERE schemaname = 'public'
-  AND tablename IN ('profiles','posts','comments','reports','reactions')
-ORDER BY tablename, cmd, policyname;
-
--- ------------------------------------------------------------
--- C. public 테이블 권한
--- anon/authenticated에 UPDATE/DELETE가 넓게 열려 있어도 RLS가 방어할 수 있지만,
--- 불필요한 권한은 최소화하는 것이 좋습니다.
--- ------------------------------------------------------------
-SELECT
-  table_schema,
-  table_name,
-  grantee,
-  privilege_type
-FROM information_schema.role_table_grants
-WHERE table_schema = 'public'
-  AND table_name IN ('profiles','posts','comments','reports','reactions')
-  AND grantee IN ('anon','authenticated')
-ORDER BY table_name, grantee, privilege_type;
-
--- ------------------------------------------------------------
--- D. profiles의 role/status 보호 트리거 존재 여부
--- enabled가 O 또는 A이면 활성 상태입니다.
--- ------------------------------------------------------------
-SELECT
-  n.nspname AS schema_name,
-  c.relname AS table_name,
-  t.tgname AS trigger_name,
-  t.tgenabled AS enabled,
-  pg_get_triggerdef(t.oid, true) AS trigger_definition
-FROM pg_trigger t
-JOIN pg_class c ON c.oid = t.tgrelid
-JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = 'public'
-  AND c.relname = 'profiles'
-  AND NOT t.tgisinternal
-ORDER BY t.tgname;
-
--- ------------------------------------------------------------
--- E. 관리자 함수 ACL 재확인
--- anon이 없어야 정상입니다.
--- ------------------------------------------------------------
-SELECT
-  n.nspname AS schema_name,
-  p.proname AS function_name,
-  pg_get_function_identity_arguments(p.oid) AS arguments,
-  p.prosecdef AS security_definer,
-  p.proconfig AS config,
-  p.proacl AS acl
-FROM pg_proc p
-JOIN pg_namespace n ON n.oid = p.pronamespace
-WHERE n.nspname = 'public'
-  AND p.proname IN (
-    'is_active_admin',
-    'protect_profile_security_fields',
-    'admin_get_report_target',
-    'admin_set_report_target_status',
-    'admin_list_comments',
-    'admin_list_post_comments',
-    'admin_page_reports',
-    'admin_page_posts',
-    'admin_page_comments',
-    'admin_page_members',
-    'admin_unified_search'
-  )
-ORDER BY p.proname;
+WITH
+rls AS (
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'schema_name', n.nspname,
+    'table_name', c.relname,
+    'rls_enabled', c.relrowsecurity,
+    'force_rls', c.relforcerowsecurity
+  ) ORDER BY c.relname), '[]'::jsonb) AS data
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND c.relkind = 'r'
+    AND c.relname IN ('profiles','posts','comments','reports','reactions')
+),
+policies AS (
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'schemaname', schemaname,
+    'tablename', tablename,
+    'policyname', policyname,
+    'permissive', permissive,
+    'roles', roles,
+    'cmd', cmd,
+    'qual', qual,
+    'with_check', with_check
+  ) ORDER BY tablename, cmd, policyname), '[]'::jsonb) AS data
+  FROM pg_policies
+  WHERE schemaname = 'public'
+    AND tablename IN ('profiles','posts','comments','reports','reactions')
+),
+grants AS (
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'table_schema', table_schema,
+    'table_name', table_name,
+    'grantee', grantee,
+    'privilege_type', privilege_type
+  ) ORDER BY table_name, grantee, privilege_type), '[]'::jsonb) AS data
+  FROM information_schema.role_table_grants
+  WHERE table_schema = 'public'
+    AND table_name IN ('profiles','posts','comments','reports','reactions')
+    AND grantee IN ('anon','authenticated')
+),
+triggers AS (
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'schema_name', n.nspname,
+    'table_name', c.relname,
+    'trigger_name', t.tgname,
+    'enabled', t.tgenabled,
+    'trigger_definition', pg_get_triggerdef(t.oid, true)
+  ) ORDER BY t.tgname), '[]'::jsonb) AS data
+  FROM pg_trigger t
+  JOIN pg_class c ON c.oid = t.tgrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND c.relname = 'profiles'
+    AND NOT t.tgisinternal
+),
+functions AS (
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'schema_name', n.nspname,
+    'function_name', p.proname,
+    'arguments', pg_get_function_identity_arguments(p.oid),
+    'security_definer', p.prosecdef,
+    'config', p.proconfig,
+    'acl', p.proacl
+  ) ORDER BY p.proname), '[]'::jsonb) AS data
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public'
+    AND p.proname IN (
+      'is_active_admin',
+      'protect_profile_security_fields',
+      'admin_get_report_target',
+      'admin_set_report_target_status',
+      'admin_list_comments',
+      'admin_list_post_comments',
+      'admin_page_reports',
+      'admin_page_posts',
+      'admin_page_comments',
+      'admin_page_members',
+      'admin_unified_search'
+    )
+)
+SELECT jsonb_pretty(jsonb_build_object(
+  'rls', (SELECT data FROM rls),
+  'policies', (SELECT data FROM policies),
+  'table_grants', (SELECT data FROM grants),
+  'profile_triggers', (SELECT data FROM triggers),
+  'admin_functions', (SELECT data FROM functions)
+)) AS security_audit;
