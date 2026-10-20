@@ -25,6 +25,11 @@ window.addEventListener("load",function(){
   script.onload=function(){
     const ui=document.createElement("script");
     ui.src="admin-ui-actions.js?v=20261020-1";
+    ui.onload=function(){
+      const member=document.createElement("script");
+      member.src="admin-member-detail-fix.js?v=20261020-1";
+      document.body.appendChild(member);
+    };
     document.body.appendChild(ui);
   };
   document.body.appendChild(script);
