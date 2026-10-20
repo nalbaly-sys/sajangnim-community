@@ -49,6 +49,16 @@ window.addEventListener("load",function(){
                   inlineEdit.onload=function(){
                     const operating=document.createElement("script");
                     operating.src="operating-pages.js?v=20261020-1";
+                    operating.onload=function(){
+                      const operatingDb=document.createElement("script");
+                      operatingDb.src="operating-db-sync.js?v=20261020-1";
+                      operatingDb.onload=function(){
+                        const adminOperating=document.createElement("script");
+                        adminOperating.src="admin-operating-content.js?v=20261020-1";
+                        document.body.appendChild(adminOperating);
+                      };
+                      document.body.appendChild(operatingDb);
+                    };
                     document.body.appendChild(operating);
                   };
                   document.body.appendChild(inlineEdit);
