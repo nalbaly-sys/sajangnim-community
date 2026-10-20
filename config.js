@@ -58,6 +58,11 @@ window.addEventListener("load",function(){
                         adminOperating.onload=function(){
                           const commentThread=document.createElement("script");
                           commentThread.src="comment-thread-reactions.js?v=20261020-1";
+                          commentThread.onload=function(){
+                            const adminCommentThread=document.createElement("script");
+                            adminCommentThread.src="admin-comment-thread-tools.js?v=20261021-1";
+                            document.body.appendChild(adminCommentThread);
+                          };
                           document.body.appendChild(commentThread);
                         };
                         document.body.appendChild(adminOperating);
