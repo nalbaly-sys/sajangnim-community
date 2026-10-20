@@ -36,10 +36,15 @@ window.addEventListener("load",function(){
           members.src="admin-members-pagination.js?v=20261020-2";
           members.onload=function(){
             const mypage=document.createElement("script");
-            mypage.src="post-mypage-pagination.js?v=20261020-1";
+            mypage.src="post-mypage-pagination.js?v=20261020-2";
             mypage.onload=function(){
               const editRefresh=document.createElement("script");
               editRefresh.src="post-edit-refresh-fix.js?v=20261020-1";
+              editRefresh.onload=function(){
+                const memberActivity=document.createElement("script");
+                memberActivity.src="admin-member-activity-pagination.js?v=20261020-1";
+                document.body.appendChild(memberActivity);
+              };
               document.body.appendChild(editRefresh);
             };
             document.body.appendChild(mypage);
