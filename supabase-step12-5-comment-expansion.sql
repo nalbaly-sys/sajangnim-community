@@ -4,7 +4,7 @@
 -- 1) comments에 parent_comment_id / reply_to_user_id 추가
 -- 2) comment_reactions 신규 생성
 -- 3) 기존 댓글 수정/삭제/신고 구조 유지
--- 4) 일반 회원은 ACTIVE 댓글에만 답글/공감 가능
+-- 4) 일반 회원은 ACTIVE 게시글의 ACTIVE 댓글에만 답글/공감 가능
 -- 5) 본인 공감만 취소 가능
 -- 6) 관리자 조회 정책 유지
 -- ============================================================
@@ -145,8 +145,10 @@ BEFORE INSERT ON public.comments
 FOR EACH ROW
 EXECUTE FUNCTION public.protect_comment_reply_fields();
 
+-- 댓글/답글 INSERT 정책은 하나만 사용합니다.
+DROP POLICY IF EXISTS comments_insert_own ON public.comments;
 DROP POLICY IF EXISTS comments_insert_reply_own ON public.comments;
-CREATE POLICY comments_insert_reply_own
+CREATE POLICY comments_insert_own
 ON public.comments
 FOR INSERT
 TO authenticated
@@ -155,7 +157,8 @@ WITH CHECK (
   AND status='ACTIVE'
   AND EXISTS (
     SELECT 1 FROM public.posts p
-    WHERE p.id=post_id AND p.status='ACTIVE'
+    WHERE p.id=post_id
+      AND p.status='ACTIVE'
   )
 );
 
