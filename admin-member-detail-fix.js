@@ -1,4 +1,4 @@
-/* 관리자 회원 상세 역할/상태 한글화 보완 */
+/* 관리자 회원 상세 역할/상태 한글화 + 최근 활동 5개 표시 */
 (function(){
   function roleKo(value){
     const v=String(value||"").toUpperCase();
@@ -14,14 +14,6 @@
     if(v==="SUSPENDED")return "정지";
     if(v==="BLOCKED")return "차단";
     if(v==="INACTIVE")return "비활성";
-    return value||"미확인";
-  }
-
-  function contentStatusKo(value){
-    const v=String(value||"").toUpperCase();
-    if(v==="ACTIVE")return "공개";
-    if(v==="HIDDEN")return "숨김";
-    if(v==="DELETED")return "삭제";
     return value||"미확인";
   }
 
@@ -47,6 +39,11 @@
                .replace(/\bHIDDEN\b/g,"숨김")
                .replace(/\bDELETED\b/g,"삭제");
       el.innerHTML=html;
+    });
+
+    box.querySelectorAll(".admin-member-posts").forEach(list=>{
+      const rows=Array.from(list.children).filter(el=>el.tagName==="DIV");
+      rows.slice(5).forEach(el=>el.remove());
     });
   }
 
