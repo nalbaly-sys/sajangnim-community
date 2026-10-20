@@ -18,8 +18,10 @@
   }
 
   function escTextarea(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function bindDetailEditButton(){const b=document.getElementById('ownerPostEditButton');if(b)b.onclick=window.editCurrentPostFromDetail;}
 
   window.editCurrentPostFromDetail=async function(){
+    if(postEditing&&!document.getElementById('inlinePostTitle'))postEditing=false;
     if(postEditing||!currentUser||!currentPostId)return;
     const titleEl=document.getElementById('detailTitle');
     const contentEl=document.getElementById('detailContent');
@@ -64,6 +66,7 @@
     if(contentEl)contentEl.style.display='';
     if(actions&&actions.dataset.originalHtml){actions.innerHTML=actions.dataset.originalHtml;delete actions.dataset.originalHtml;}
     postEditing=false;
+    bindDetailEditButton();
   };
 
   window.saveInlinePostEdit=async function(){
@@ -135,6 +138,5 @@
   };
 
   ensureStyles();
-  const detailEditButton=document.getElementById('ownerPostEditButton');
-  if(detailEditButton)detailEditButton.onclick=window.editCurrentPostFromDetail;
+  bindDetailEditButton();
 })();
