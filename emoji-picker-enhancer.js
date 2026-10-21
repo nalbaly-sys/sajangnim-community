@@ -59,9 +59,7 @@
     return pickerHost;
   }
 
-  function closePicker(){
-    pickerHost?.classList.remove('open');
-  }
+  function closePicker(){pickerHost?.classList.remove('open');}
 
   function positionPicker(button){
     if(!pickerHost||!button)return;
@@ -175,13 +173,10 @@
       const editor=container?.querySelector?.('.ql-editor');
       if(editor)enhanceToolbar(toolbar,editor);
     });
-    document.querySelectorAll('#commentContent, textarea.comment-inline-editor, textarea[id^="commentReplyInput-"], textarea[id^="adminReplyComment-"]').forEach(enhanceTextarea);
+    document.querySelectorAll('#commentContent, textarea.comment-inline-editor, textarea[id^="commentReplyInput-"], textarea[id^="adminReplyComment-"], textarea[id^="adminEditComment-"]').forEach(enhanceTextarea);
   }
 
   const observer=new MutationObserver(()=>scan());
-  function start(){
-    scan();
-    observer.observe(document.body,{childList:true,subtree:true});
-  }
+  function start(){scan();observer.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
