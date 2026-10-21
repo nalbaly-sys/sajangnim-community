@@ -6,6 +6,17 @@
    - 공개 이미지 민감정보 업로드 경고
 ================================================== */
 (function(){
+  /*
+   * 중요: 최종 운영문서/회원탈퇴 Storage 정리는 DOMPurify와 무관한 기능이다.
+   * 따라서 DOMPurify 존재 여부를 확인하기 전에 독립 부트스트랩을 먼저 로드한다.
+   */
+  if(!document.getElementById('stage17Bootstrap')){
+    const bootstrap=document.createElement('script');
+    bootstrap.id='stage17Bootstrap';
+    bootstrap.src='stage17-bootstrap.js?v=20261022-2';
+    document.body.appendChild(bootstrap);
+  }
+
   const purify=window.DOMPurify;
   if(!purify||purify.__sajangnimStrictRender)return;
 
@@ -90,25 +101,4 @@
   observer.observe(document.body,{childList:true,subtree:true});
 
   purify.__sajangnimStrictRender=true;
-
-  if(!document.getElementById('stage17AccountDeleteCleanup')){
-    const accountCleanup=document.createElement('script');
-    accountCleanup.id='stage17AccountDeleteCleanup';
-    accountCleanup.src='account-delete-storage-cleanup.js?v=20261021-1';
-    document.body.appendChild(accountCleanup);
-  }
-
-  if(!document.getElementById('stage17FinalLegalGuard')){
-    const guard=document.createElement('script');
-    guard.id='stage17FinalLegalGuard';
-    guard.src='final-legal-adsense-guard.js?v=20261022-1';
-    guard.onload=function(){
-      if(document.getElementById('stage17FinalLegalDocs'))return;
-      const legal=document.createElement('script');
-      legal.id='stage17FinalLegalDocs';
-      legal.src='legal-docs-finalization.js?v=20261022-1';
-      document.body.appendChild(legal);
-    };
-    document.body.appendChild(guard);
-  }
 })();
