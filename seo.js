@@ -2,11 +2,12 @@
    STEP 15: 기본 SEO / 공유 메타
    - 기본 title / description / robots
    - Open Graph / Twitter(X) 카드
-   - 운영 도메인에서는 canonical 자동 생성
+   - Vercel 운영 주소 canonical 고정
    - 게시글 상세 열기 시 문서 제목/설명 갱신
 ================================================== */
 (function(){
   const SITE_NAME='사장님도 퇴근합니다';
+  const SITE_URL='https://sajangnim-community.vercel.app/';
   const DEFAULT_TITLE='사장님도 퇴근합니다 | 자영업 사장님 커뮤니티';
   const DEFAULT_DESCRIPTION='오늘도 장사하느라 고생하셨습니다. 자영업 사장님들의 현실 장사 이야기, 고민, 노하우와 웃픈 경험을 나누는 커뮤니티입니다.';
 
@@ -36,26 +37,19 @@
     el.setAttribute('content',content);
   }
 
-  function productionCanonical(){
-    try{
-      const {protocol,hostname,origin,pathname}=window.location;
-      if(!/^https?:$/.test(protocol))return '';
-      if(['localhost','127.0.0.1','0.0.0.0'].includes(hostname))return '';
-      return origin+(pathname||'/');
-    }catch(_){return '';}
-  }
-
   function setCanonical(url){
     let link=document.head.querySelector('link[rel="canonical"]');
-    if(!url){link?.remove();return;}
     if(!link){link=document.createElement('link');link.rel='canonical';document.head.appendChild(link);}
     link.href=url;
+  }
+
+  function isLocal(){
+    return ['localhost','127.0.0.1','0.0.0.0'].includes(window.location.hostname);
   }
 
   function applySeo({title=DEFAULT_TITLE,description=DEFAULT_DESCRIPTION,type='website'}={}){
     const finalTitle=cleanText(title,70)||DEFAULT_TITLE;
     const finalDescription=cleanText(description,160)||DEFAULT_DESCRIPTION;
-    const canonical=productionCanonical();
 
     document.title=finalTitle;
     setMetaName('description',finalDescription);
@@ -67,13 +61,18 @@
     setMetaProperty('og:type',type);
     setMetaProperty('og:title',finalTitle);
     setMetaProperty('og:description',finalDescription);
-    if(canonical)setMetaProperty('og:url',canonical);
+    setMetaProperty('og:url',SITE_URL);
 
     setMetaName('twitter:card','summary');
     setMetaName('twitter:title',finalTitle);
     setMetaName('twitter:description',finalDescription);
 
-    setCanonical(canonical);
+    // 로컬 개발 중에도 운영 canonical을 유지해 중복 URL 기준을 명확히 한다.
+    setCanonical(SITE_URL);
+
+    // 디버깅용: 로컬에서는 운영 주소를 canonical로 쓰되 실제 이동은 하지 않는다.
+    if(isLocal())document.documentElement.dataset.seoEnvironment='local';
+    else document.documentElement.dataset.seoEnvironment='production';
   }
 
   function applyHomeSeo(){
