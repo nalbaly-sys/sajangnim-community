@@ -1,8 +1,9 @@
 /* ==================================================
-   STEP 14: 제목 + 본문 이모지 피커
+   STEP 14: 제목 + 본문 + 댓글 이모지 피커
    - emoji-picker-element 1.29.1
    - 제목은 평문 + 이모지
    - 본문은 Quill 편집기에 이모지 삽입
+   - 댓글/수정/대댓글에도 같은 이모지 피커 재사용
 ================================================== */
 (function(){
   const EMOJI_MODULE='https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
@@ -17,9 +18,10 @@
     s.textContent=`
       .emoji-title-row{display:flex;align-items:center;gap:8px;width:100%}.emoji-title-row>input{flex:1;min-width:0}.emoji-open-button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;padding:0 10px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:20px;cursor:pointer}.emoji-open-button:hover{background:#f8fafc}.emoji-open-button:focus{outline:2px solid #2563eb;outline-offset:2px}
       .emoji-body-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border:0;background:transparent;font-size:18px;cursor:pointer;border-radius:4px}.emoji-body-button:hover{background:#e5e7eb}
+      .emoji-comment-tools{display:flex;justify-content:flex-end;align-items:center;margin-top:6px}.emoji-comment-button{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;padding:0 9px;border:1px solid #d1d5db;border-radius:8px;background:#fff;font-size:18px;cursor:pointer;line-height:1}.emoji-comment-button:hover{background:#f8fafc}.emoji-comment-button:focus{outline:2px solid #2563eb;outline-offset:1px}
       .emoji-picker-popover{position:fixed!important;z-index:2147483646!important;width:min(360px,calc(100vw - 24px));max-height:min(520px,calc(100vh - 100px));background:#fff;border:1px solid #d1d5db;border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.28);padding:8px;display:none;pointer-events:auto!important;isolation:isolate;transform:translateZ(0)}.emoji-picker-popover.open{display:block!important}.emoji-picker-popover emoji-picker{display:block;width:100%;height:460px;max-height:calc(100vh - 130px);pointer-events:auto!important}
       .emoji-picker-arrow-note{font-size:11px;color:#6b7280;padding:2px 4px 7px;text-align:center}
-      @media(max-width:600px){.emoji-title-row{gap:6px}.emoji-open-button{min-width:40px;height:40px;padding:0 8px}.emoji-picker-popover{left:12px!important;right:12px!important;top:72px!important;width:auto!important}.emoji-picker-popover emoji-picker{height:62vh;max-height:62vh}}
+      @media(max-width:600px){.emoji-title-row{gap:6px}.emoji-open-button{min-width:40px;height:40px;padding:0 8px}.emoji-picker-popover{left:12px!important;right:12px!important;top:72px!important;width:auto!important}.emoji-picker-popover emoji-picker{height:62vh;max-height:62vh}.emoji-comment-button{min-width:34px;height:30px;font-size:17px}}
     `;
     document.head.appendChild(s);
   }
@@ -89,8 +91,9 @@
     if(!input)return;
     const start=Number.isInteger(input.selectionStart)?input.selectionStart:input.value.length;
     const end=Number.isInteger(input.selectionEnd)?input.selectionEnd:start;
+    const maxLength=Number(input.maxLength||0);
     const next=input.value.slice(0,start)+emoji+input.value.slice(end);
-    if(next.length>Number(input.maxLength||100)){return;}
+    if(maxLength>0&&next.length>maxLength)return;
     input.value=next;
     const caret=start+emoji.length;
     input.focus();
@@ -126,7 +129,7 @@
   }
 
   function insertEmoji(target,emoji){
-    if(target.type==='title')insertIntoInput(target.element,emoji);
+    if(target.type==='title'||target.type==='textarea')insertIntoInput(target.element,emoji);
     if(target.type==='body')insertIntoQuill(target.element,emoji);
   }
 
@@ -145,9 +148,22 @@
     toolbar.dataset.emojiEnhanced='1';
     let group=toolbar.querySelector('.ql-formats:last-child');
     if(!group){group=document.createElement('span');group.className='ql-formats';toolbar.appendChild(group);}
+    if(group.querySelector('[data-emoji-trigger]'))return;
     const button=document.createElement('button');button.type='button';button.className='emoji-body-button';button.dataset.emojiTrigger='1';button.textContent='😀';button.title='본문에 이모지 넣기';button.setAttribute('aria-label','본문에 이모지 넣기');
     button.onclick=function(event){event.preventDefault();event.stopPropagation();openPicker({type:'body',element:editor},button);};
     group.appendChild(button);
+  }
+
+  function enhanceTextarea(textarea){
+    if(!textarea||textarea.dataset.emojiCommentEnhanced==='1')return;
+    textarea.dataset.emojiCommentEnhanced='1';
+    const existing=textarea.nextElementSibling;
+    if(existing?.classList?.contains('emoji-comment-tools'))return;
+    const tools=document.createElement('div');tools.className='emoji-comment-tools';
+    const button=document.createElement('button');button.type='button';button.className='emoji-comment-button';button.dataset.emojiTrigger='1';button.textContent='😀';button.title='이모지 넣기';button.setAttribute('aria-label','댓글에 이모지 넣기');
+    button.onclick=function(event){event.preventDefault();event.stopPropagation();openPicker({type:'textarea',element:textarea},button);};
+    tools.appendChild(button);
+    textarea.insertAdjacentElement('afterend',tools);
   }
 
   function scan(){
@@ -159,6 +175,7 @@
       const editor=container?.querySelector?.('.ql-editor');
       if(editor)enhanceToolbar(toolbar,editor);
     });
+    document.querySelectorAll('#commentContent, textarea.comment-inline-editor, textarea[id^="commentReplyInput-"], textarea[id^="adminReplyComment-"]').forEach(enhanceTextarea);
   }
 
   const observer=new MutationObserver(()=>scan());
