@@ -1,13 +1,16 @@
 /* ==================================================
    STEP 15: 기본 SEO / 공유 메타
+   STEP 16: AdSense 사이트 확인 메타
    - 기본 title / description / robots
    - Open Graph / Twitter(X) 카드
    - Vercel 운영 주소 canonical 고정
    - 게시글 상세 열기 시 문서 제목/설명 갱신
+   - Google AdSense publisher meta 주입
 ================================================== */
 (function(){
   const SITE_NAME='사장님도 퇴근합니다';
   const SITE_URL='https://sajangnim-community.vercel.app/';
+  const ADSENSE_PUBLISHER_ID='ca-pub-4440430005819024';
   const DEFAULT_TITLE='사장님도 퇴근합니다 | 자영업 사장님 커뮤니티';
   const DEFAULT_DESCRIPTION='오늘도 장사하느라 고생하셨습니다. 자영업 사장님들의 현실 장사 이야기, 고민, 노하우와 웃픈 경험을 나누는 커뮤니티입니다.';
 
@@ -55,6 +58,7 @@
     setMetaName('description',finalDescription);
     setMetaName('robots','index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
     setMetaName('theme-color','#ffffff');
+    setMetaName('google-adsense-account',ADSENSE_PUBLISHER_ID);
 
     setMetaProperty('og:locale','ko_KR');
     setMetaProperty('og:site_name',SITE_NAME);
