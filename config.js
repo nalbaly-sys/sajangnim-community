@@ -82,6 +82,11 @@ window.addEventListener("load",function(){
                                         emojiPicker.onload=function(){
                                           const postEditStateFix=document.createElement("script");
                                           postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
+                                          postEditStateFix.onload=function(){
+                                            const seo=document.createElement("script");
+                                            seo.src="seo.js?v=20261021-1";
+                                            document.body.appendChild(seo);
+                                          };
                                           document.body.appendChild(postEditStateFix);
                                         };
                                         document.body.appendChild(emojiPicker);
