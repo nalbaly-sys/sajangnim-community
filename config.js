@@ -85,6 +85,11 @@ window.addEventListener("load",function(){
                                           postEditStateFix.onload=function(){
                                             const seo=document.createElement("script");
                                             seo.src="seo.js?v=20261021-2";
+                                            seo.onload=function(){
+                                              const adsenseReadiness=document.createElement("script");
+                                              adsenseReadiness.src="adsense-readiness.js?v=20261021-1";
+                                              document.body.appendChild(adsenseReadiness);
+                                            };
                                             document.body.appendChild(seo);
                                           };
                                           document.body.appendChild(postEditStateFix);
