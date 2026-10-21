@@ -70,6 +70,11 @@ window.addEventListener("load",function(){
                                 adminCommentDisplay.onload=function(){
                                   const notifications=document.createElement("script");
                                   notifications.src="notifications.js?v=20261021-1";
+                                  notifications.onload=function(){
+                                    const richPostEditor=document.createElement("script");
+                                    richPostEditor.src="rich-post-editor.js?v=20261021-1";
+                                    document.body.appendChild(richPostEditor);
+                                  };
                                   document.body.appendChild(notifications);
                                 };
                                 document.body.appendChild(adminCommentDisplay);
