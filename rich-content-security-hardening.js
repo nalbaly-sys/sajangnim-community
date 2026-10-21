@@ -90,4 +90,11 @@
   observer.observe(document.body,{childList:true,subtree:true});
 
   purify.__sajangnimStrictRender=true;
+
+  if(!document.getElementById('stage17AccountDeleteCleanup')){
+    const accountCleanup=document.createElement('script');
+    accountCleanup.id='stage17AccountDeleteCleanup';
+    accountCleanup.src='account-delete-storage-cleanup.js?v=20261021-1';
+    document.body.appendChild(accountCleanup);
+  }
 })();
