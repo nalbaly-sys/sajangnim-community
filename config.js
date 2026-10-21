@@ -88,6 +88,11 @@ window.addEventListener("load",function(){
                                             seo.onload=function(){
                                               const adsenseReadiness=document.createElement("script");
                                               adsenseReadiness.src="adsense-readiness.js?v=20261021-1";
+                                              adsenseReadiness.onload=function(){
+                                                const anonymousPrivacy=document.createElement("script");
+                                                anonymousPrivacy.src="anonymous-privacy-hardening.js?v=20261021-1";
+                                                document.body.appendChild(anonymousPrivacy);
+                                              };
                                               document.body.appendChild(adsenseReadiness);
                                             };
                                             document.body.appendChild(seo);
