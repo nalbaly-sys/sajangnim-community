@@ -84,7 +84,7 @@ window.addEventListener("load",function(){
                                           postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
                                           postEditStateFix.onload=function(){
                                             const seo=document.createElement("script");
-                                            seo.src="seo.js?v=20261021-1";
+                                            seo.src="seo.js?v=20261021-2";
                                             document.body.appendChild(seo);
                                           };
                                           document.body.appendChild(postEditStateFix);
