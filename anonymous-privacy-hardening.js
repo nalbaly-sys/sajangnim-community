@@ -70,6 +70,16 @@
     }catch(e){console.error('익명 보호 댓글 조회 오류:',e);list.innerHTML='<div class="post-empty">댓글을 불러오지 못했습니다.</div>';}
   };
 
+  window.toggleCommentReaction=async function(commentId,type){
+    if(!currentUser){if(typeof openLoginModal==='function')openLoginModal();return;}if(!TYPES.includes(type))return;
+    const existing=lastCommentReactions.find(r=>Number(r.comment_id)===Number(commentId)&&r.user_id===currentUser.id&&r.reaction_type===type);
+    try{
+      if(existing){const {error}=await supabaseClient.from('comment_reactions').delete().eq('id',existing.id).eq('user_id',currentUser.id);if(error)throw error;}
+      else{const {error}=await supabaseClient.from('comment_reactions').insert({comment_id:Number(commentId),user_id:currentUser.id,reaction_type:type});if(error)throw error;}
+      await window.loadComments(currentPostId);
+    }catch(e){console.error('댓글 공감 처리 오류:',e);alert('댓글 공감 처리에 실패했습니다.');}
+  };
+
   const previousOpenPostDetail=window.openPostDetail;
   window.openPostDetail=async function(postId){
     if(!postId)return;
@@ -88,12 +98,15 @@
     }catch(e){console.error('익명 보호 게시글 상세 오류:',e);if(typeof previousOpenPostDetail==='function')return previousOpenPostDetail(postId);}
   };
 
-  const previousReportComment=window.reportComment;
   window.reportComment=async function(commentId){
     if(!currentUser){alert('댓글을 신고하려면 로그인해주세요.');return;}if(!currentPostId)return;
     try{
       const {data:comment,error}=await supabaseClient.from('comments_public_safe').select('id,is_mine').eq('id',Number(commentId)).eq('post_id',Number(currentPostId)).maybeSingle();if(error)throw error;if(!comment){alert('신고할 댓글을 찾을 수 없습니다.');return;}if(comment.is_mine){alert('본인이 작성한 댓글은 신고할 수 없습니다.');return;}
-      if(typeof previousReportComment==='function')return previousReportComment(commentId);
-    }catch(e){console.error('익명 보호 신고 대상 확인 오류:',e);alert('댓글 확인에 실패했습니다. 잠시 후 다시 시도해주세요.');}
+      if(typeof requestReportReason!=='function'){alert('신고 기능을 불러오지 못했습니다.');return;}
+      const report=await requestReportReason('댓글');if(!report)return;
+      const {error:insertError}=await supabaseClient.from('reports').insert({target_type:'COMMENT',target_id:Number(commentId),reporter_id:currentUser.id,reason:report.reason,detail:report.detail,status:'PENDING'});
+      if(insertError){const msg=String(insertError.message||'').toLowerCase();if(msg.includes('duplicate')||insertError.code==='23505'){alert('이미 신고한 댓글입니다.');return;}throw insertError;}
+      alert('신고가 접수되었습니다. 운영자가 확인하겠습니다.');
+    }catch(e){console.error('익명 보호 댓글 신고 오류:',e);alert('댓글 신고에 실패했습니다. 잠시 후 다시 시도해주세요.');}
   };
 })();
