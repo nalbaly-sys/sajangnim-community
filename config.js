@@ -72,7 +72,7 @@ window.addEventListener("load",function(){
                                   notifications.src="notifications.js?v=20261021-1";
                                   notifications.onload=function(){
                                     const richPostEditor=document.createElement("script");
-                                    richPostEditor.src="rich-post-editor.js?v=20261021-1";
+                                    richPostEditor.src="rich-post-editor.js?v=20261021-2";
                                     richPostEditor.onload=function(){
                                       const emojiPicker=document.createElement("script");
                                       emojiPicker.src="emoji-picker-enhancer.js?v=20261021-2";
