@@ -49,3 +49,42 @@ using (
   bucket_id='post-images'
   and (storage.foldername(name))[1]=(select auth.uid()::text)
 );
+
+-- 기존 게시글 UPDATE 보호 트리거가 content_html 변경도 정상적인 본인 수정으로 인정하도록 확장
+create or replace function public.protect_post_updates()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_uid uuid := (select auth.uid());
+begin
+  if session_user = 'postgres' or (select auth.role()) = 'service_role' then
+    return new;
+  end if;
+
+  if v_uid is not null and public.is_active_admin() then
+    return new;
+  end if;
+
+  if old.status = 'ACTIVE'
+     and new.status = old.status
+     and coalesce(new.view_count, 0) = coalesce(old.view_count, 0) + 1
+     and (to_jsonb(new) - array['view_count']) = (to_jsonb(old) - array['view_count']) then
+    return new;
+  end if;
+
+  if v_uid is not null
+     and old.user_id = v_uid
+     and new.user_id = old.user_id
+     and old.status = 'ACTIVE'
+     and new.status in ('ACTIVE','DELETED')
+     and (to_jsonb(new) - array['title','content','content_html','updated_at','status'])
+         = (to_jsonb(old) - array['title','content','content_html','updated_at','status']) then
+    return new;
+  end if;
+
+  raise exception '게시글을 수정할 권한이 없습니다.' using errcode = '42501';
+end;
+$function$;
