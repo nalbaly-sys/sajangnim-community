@@ -21,5 +21,5 @@
 
   loadOnce('stage17AccountDeleteCleanup','account-delete-storage-cleanup.js?v=20261022-4');
   loadOnce('stage17FinalLegalDocsV4','legal-ui-fix-v4.js?v=20261022-4');
-  loadOnce('guestAuthUiFix','guest-auth-ui-fix.js?v=20261022-1');
+  loadOnce('guestAuthUiFix','guest-auth-ui-fix.js?v=20261022-2');
 })();
