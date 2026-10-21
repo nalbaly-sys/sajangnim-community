@@ -18,14 +18,17 @@
   const PURIFY_JS='https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js';
   const PUBLIC_PREFIX=(window.SUPABASE_CONFIG?.url||'https://djadqsfdrrihkswplzcn.supabase.co')+'/storage/v1/object/public/'+BUCKET+'/';
   const TOOLBAR=[
-    [{header:[2,3,false]}],
+    [{header:[2,3,false]},{size:['small',false,'large','huge']}],
     ['bold','italic','underline','strike'],
+    [{color:[]},{background:[]}],
+    [{align:[]}],
     ['blockquote'],
     [{list:'ordered'},{list:'bullet'}],
     ['link','image'],
     ['clean']
   ];
-  const FORMATS=['header','bold','italic','underline','strike','blockquote','list','link','image'];
+  const FORMATS=['header','size','bold','italic','underline','strike','color','background','align','blockquote','list','link','image'];
+  const SAFE_CLASSES=new Set(['ql-size-small','ql-size-large','ql-size-huge','ql-align-center','ql-align-right','ql-align-justify']);
 
   let createQuill=null;
   let editQuill=null;
@@ -48,7 +51,7 @@
   function ensureStyles(){
     if(document.getElementById('richPostEditorStyles'))return;
     const s=document.createElement('style');s.id='richPostEditorStyles';s.textContent=`
-      .rich-post-editor-wrap{margin:4px 0 14px}.rich-post-editor-wrap .ql-toolbar{border-radius:10px 10px 0 0;background:#f8fafc}.rich-post-editor-wrap .ql-container{border-radius:0 0 10px 10px;background:#fff;font-family:inherit;font-size:15px}.rich-post-editor-wrap .ql-editor{min-height:220px;line-height:1.75}.rich-post-editor-wrap .ql-editor img{max-width:100%;height:auto;border-radius:10px;display:block;margin:12px auto}.rich-post-upload-note{margin:-6px 0 12px;font-size:12px;color:#6b7280}.rich-post-content{line-height:1.8;overflow-wrap:anywhere}.rich-post-content p{margin:0 0 12px}.rich-post-content h2,.rich-post-content h3{margin:18px 0 10px;line-height:1.45}.rich-post-content blockquote{margin:14px 0;padding:10px 14px;border-left:4px solid #d1d5db;background:#f8fafc;color:#4b5563}.rich-post-content ul,.rich-post-content ol{padding-left:24px;margin:10px 0}.rich-post-content a{color:#2563eb;text-decoration:underline}.rich-post-content img{display:block;max-width:100%;height:auto;margin:16px auto;border-radius:12px}.inline-rich-post-wrap{width:100%;margin:10px 0 12px}.inline-rich-post-wrap .ql-editor{min-height:220px;line-height:1.75}.inline-rich-post-wrap .ql-editor img{max-width:100%;height:auto;border-radius:10px}.step14-uploading{font-size:12px;color:#2563eb;margin-top:6px}@media(max-width:600px){.rich-post-editor-wrap .ql-editor,.inline-rich-post-wrap .ql-editor{min-height:180px}.ql-toolbar.ql-snow{padding:6px}}
+      .rich-post-editor-wrap{margin:4px 0 14px}.rich-post-editor-wrap .ql-toolbar{border-radius:10px 10px 0 0;background:#f8fafc;display:flex;flex-wrap:wrap;align-items:center}.rich-post-editor-wrap .ql-container{border-radius:0 0 10px 10px;background:#fff;font-family:inherit;font-size:15px}.rich-post-editor-wrap .ql-editor{min-height:220px;line-height:1.75}.rich-post-editor-wrap .ql-editor img{max-width:100%;height:auto;border-radius:10px;display:block;margin:12px auto}.rich-post-upload-note{margin:-6px 0 12px;font-size:12px;color:#6b7280}.rich-post-content{line-height:1.8;overflow-wrap:anywhere}.rich-post-content p{margin:0 0 12px}.rich-post-content h2,.rich-post-content h3{margin:18px 0 10px;line-height:1.45}.rich-post-content blockquote{margin:14px 0;padding:10px 14px;border-left:4px solid #d1d5db;background:#f8fafc;color:#4b5563}.rich-post-content ul,.rich-post-content ol{padding-left:24px;margin:10px 0}.rich-post-content a{color:#2563eb;text-decoration:underline}.rich-post-content img{display:block;max-width:100%;height:auto;margin:16px auto;border-radius:12px}.rich-post-content .ql-size-small{font-size:.75em}.rich-post-content .ql-size-large{font-size:1.5em}.rich-post-content .ql-size-huge{font-size:2.5em}.rich-post-content .ql-align-center{text-align:center}.rich-post-content .ql-align-right{text-align:right}.rich-post-content .ql-align-justify{text-align:justify}.inline-rich-post-wrap{width:100%;margin:10px 0 12px}.inline-rich-post-wrap .ql-editor{min-height:220px;line-height:1.75}.inline-rich-post-wrap .ql-editor img{max-width:100%;height:auto;border-radius:10px}.step14-uploading{font-size:12px;color:#2563eb;margin-top:6px}@media(max-width:600px){.rich-post-editor-wrap .ql-editor,.inline-rich-post-wrap .ql-editor{min-height:180px}.ql-toolbar.ql-snow{padding:6px}.ql-toolbar .ql-formats{margin-right:7px!important;margin-bottom:4px}}
     `;document.head.appendChild(s);
   }
 
@@ -63,15 +66,42 @@
     }catch(error){console.error('리치 편집기 라이브러리 로드 오류:',error);return false;}
   }
 
+  function isSafeCssColor(value){
+    const v=String(value||'').trim().toLowerCase();
+    return /^#[0-9a-f]{3,8}$/.test(v)||/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/.test(v);
+  }
+
   function sanitizeRichHtml(html){
     if(!window.DOMPurify)return '';
     const clean=window.DOMPurify.sanitize(String(html||''),{
-      ALLOWED_TAGS:['p','br','strong','em','u','s','h2','h3','blockquote','ol','ul','li','a','img'],
-      ALLOWED_ATTR:['href','target','rel','src','alt','title']
+      ALLOWED_TAGS:['p','br','span','strong','em','u','s','h2','h3','blockquote','ol','ul','li','a','img'],
+      ALLOWED_ATTR:['href','target','rel','src','alt','title','class','style']
     });
     const doc=new DOMParser().parseFromString('<div id="root">'+clean+'</div>','text/html');
     const root=doc.getElementById('root');
     if(!root)return '';
+
+    root.querySelectorAll('*').forEach(el=>{
+      const classes=String(el.getAttribute('class')||'').split(/\s+/).filter(c=>SAFE_CLASSES.has(c));
+      if(classes.length)el.setAttribute('class',classes.join(' '));else el.removeAttribute('class');
+
+      const sourceStyle=el.getAttribute('style')||'';
+      el.removeAttribute('style');
+      if(sourceStyle){
+        const probe=document.createElement('span');probe.setAttribute('style',sourceStyle);
+        const safe=[];
+        const color=probe.style.color;
+        const background=probe.style.backgroundColor;
+        const align=probe.style.textAlign;
+        const fontSize=probe.style.fontSize;
+        if(color&&isSafeCssColor(color))safe.push('color:'+color);
+        if(background&&isSafeCssColor(background))safe.push('background-color:'+background);
+        if(['left','center','right','justify'].includes(align))safe.push('text-align:'+align);
+        if(['0.75em','1.5em','2.5em'].includes(fontSize))safe.push('font-size:'+fontSize);
+        if(safe.length)el.setAttribute('style',safe.join(';'));
+      }
+    });
+
     root.querySelectorAll('img').forEach(img=>{
       const src=String(img.getAttribute('src')||'');
       if(!src.startsWith(PUBLIC_PREFIX)){img.remove();return;}
