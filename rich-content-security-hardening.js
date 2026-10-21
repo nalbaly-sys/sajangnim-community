@@ -97,4 +97,18 @@
     accountCleanup.src='account-delete-storage-cleanup.js?v=20261021-1';
     document.body.appendChild(accountCleanup);
   }
+
+  if(!document.getElementById('stage17FinalLegalGuard')){
+    const guard=document.createElement('script');
+    guard.id='stage17FinalLegalGuard';
+    guard.src='final-legal-adsense-guard.js?v=20261022-1';
+    guard.onload=function(){
+      if(document.getElementById('stage17FinalLegalDocs'))return;
+      const legal=document.createElement('script');
+      legal.id='stage17FinalLegalDocs';
+      legal.src='legal-docs-finalization.js?v=20261022-1';
+      document.body.appendChild(legal);
+    };
+    document.body.appendChild(guard);
+  }
 })();
