@@ -74,14 +74,19 @@ window.addEventListener("load",function(){
                                     const richPostEditor=document.createElement("script");
                                     richPostEditor.src="rich-post-editor.js?v=20261021-2";
                                     richPostEditor.onload=function(){
-                                      const emojiPicker=document.createElement("script");
-                                      emojiPicker.src="emoji-picker-enhancer.js?v=20261021-2";
-                                      emojiPicker.onload=function(){
-                                        const postEditStateFix=document.createElement("script");
-                                        postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
-                                        document.body.appendChild(postEditStateFix);
+                                      const stickyToolbar=document.createElement("script");
+                                      stickyToolbar.src="sticky-editor-toolbar.js?v=20261021-1";
+                                      stickyToolbar.onload=function(){
+                                        const emojiPicker=document.createElement("script");
+                                        emojiPicker.src="emoji-picker-enhancer.js?v=20261021-3";
+                                        emojiPicker.onload=function(){
+                                          const postEditStateFix=document.createElement("script");
+                                          postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
+                                          document.body.appendChild(postEditStateFix);
+                                        };
+                                        document.body.appendChild(emojiPicker);
                                       };
-                                      document.body.appendChild(emojiPicker);
+                                      document.body.appendChild(stickyToolbar);
                                     };
                                     document.body.appendChild(richPostEditor);
                                   };
