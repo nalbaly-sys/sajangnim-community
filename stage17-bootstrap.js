@@ -20,8 +20,5 @@
   }
 
   loadOnce('stage17AccountDeleteCleanup','account-delete-storage-cleanup.js?v=20261022-4');
-
-  loadOnce('stage17FinalLegalGuard','final-legal-adsense-guard.js?v=20261022-4',function(){
-    loadOnce('stage17FinalLegalDocsV3','legal-ui-fix-v3.js?v=20261022-1');
-  });
+  loadOnce('stage17FinalLegalDocsV4','legal-ui-fix-v4.js?v=20261022-4');
 })();
