@@ -4,10 +4,10 @@
 
 ## 프로젝트 진행 현황
 
-- **완료:** 1~14단계
-- **진행 중:** 15단계 — SEO
-- **14단계 완료:** Supabase Storage 이미지 업로드, Quill 리치 편집기, 제목/본문 이모지, 글자 크기·색상·배경색·정렬, sticky 편집 툴바, 댓글/대댓글/관리자 댓글 수정 이모지, 수정 상태 정리 및 중복 이모지 버튼 방지
-- **다음 단계:** 15단계 SEO 기본 설정 → 16단계 AdSense → 17단계 최종 보안·개인정보 점검
+- **완료:** 1~15단계
+- **진행 중:** 16단계 — AdSense 승인 준비
+- **15단계 완료:** Vercel 운영 주소 확정, 기본 SEO 메타, 동적 게시글 제목/설명, Open Graph, Twitter/X 카드, canonical, robots.txt, sitemap.xml, Google/Kakao OAuth 운영주소 검증
+- **다음 단계:** 16단계 AdSense → 17단계 최종 보안·개인정보 점검
 - **작업 원칙:** 실제 코드와 Supabase 동작을 확인한 뒤 한 단계씩 진행합니다. 기존 기능과 디자인을 불필요하게 깨뜨리지 않고, 구현 후 실제 사용자 테스트를 거쳐 완료 처리합니다.
 
 ## 전체 작업 순서 (1~17단계)
@@ -27,10 +27,19 @@
 | 11 | 관리자 보안 | RLS, 최소 권한, 관리자 RPC 검증, 일반회원 우회 차단 | 완료 |
 | 12 | 공지·운영 페이지 | 공지사항, 이벤트, 이용규칙, 개인정보처리방침, 이용약관 | 완료 |
 | 13 | 알림 | 댓글·대댓글·공감 알림, 읽음/안읽음, 배지, 모두 읽음, 원문 이동, RLS | 완료 |
-| 14 | 이미지 업로드 + 편집기 | Storage, 이미지 보안, 리치 텍스트, 이모지, 서식, sticky 툴바, 댓글 이모지 | **완료** |
-| 15 | SEO | 페이지 제목·설명, 공유 미리보기, robots, canonical, sitemap, 검색엔진 기본 설정 | **진행 중** |
-| 16 | AdSense | 광고 정책 및 콘텐츠 요건 점검, 광고 위치·코드 적용, 승인 준비 | 예정 |
+| 14 | 이미지 업로드 + 편집기 | Storage, 이미지 보안, 리치 텍스트, 이모지, 서식, sticky 툴바, 댓글 이모지 | 완료 |
+| 15 | SEO | 페이지 제목·설명, 공유 미리보기, robots, canonical, sitemap, 검색엔진 기본 설정 | **완료** |
+| 16 | AdSense | 광고 정책 및 콘텐츠 요건 점검, 광고 위치·코드 적용, 승인 준비 | **진행 중** |
 | 17 | 최종 보안·개인정보 점검 | RLS·API 키·관리자 권한·스토리지·XSS·스팸·개인정보처리방침 최종 확인 | 예정 |
+
+## 운영 주소
+
+- Vercel 운영 URL: `https://sajangnim-community.vercel.app/`
+- Supabase Auth Site URL/Redirect URL에 Vercel 운영 주소 등록
+- 이메일 로그인 정상
+- Google OAuth 로그인 정상
+- Kakao OAuth 로그인 정상
+- 게시글/댓글/대댓글/이미지/수정 기능 실제 배포 환경에서 정상 확인
 
 ## 실행
 
@@ -119,91 +128,70 @@ py -m http.server 3000
 ## 14단계 이미지 업로드 + 게시글 편집기 — 완료
 
 ### Supabase Storage
-
-`supabase-step14-rich-posts.sql`
-
 - `posts.content_html` 추가
-- `post-images` Storage bucket 생성
-- 이미지 한 장당 최대 **5MB**
-- 허용 형식: **JPG / JPEG / PNG / WEBP / GIF**
-- SVG 제외
-- 로그인 사용자는 **본인 UUID 폴더에만 업로드/삭제 가능**
-- 공개 게시글 이미지는 public URL로 표시
+- `post-images` Storage bucket
+- 이미지 한 장당 최대 5MB
+- JPG/JPEG/PNG/WEBP/GIF 허용, SVG 제외
+- 로그인 사용자는 본인 UUID 폴더에만 업로드/삭제 가능
 
 ### 리치 텍스트 편집기
-
-`rich-post-editor.js`
-
-- Quill 2.0.3 기반
-- DOMPurify 3.4.16 기반 HTML 정리
-- 굵게 / 기울임 / 밑줄 / 취소선
-- H2 / H3
-- 목록 / 인용 / 링크 / 이미지
-- **선택한 글자만 크기 변경**: 작게 / 기본 / 크게 / 아주 크게
-- **글자 색상**
-- **배경색**
-- **정렬**: 왼쪽 / 가운데 / 오른쪽 / 양쪽
-- 저장 후 상세보기에서도 서식 유지
-- 기존 평문 `content`를 유지해 기존 게시글·검색 호환
-
-### 이모지
-
-`emoji-picker-enhancer.js`
-
-- emoji-picker-element 1.29.1
-- 제목 😀 이모지
-- 본문 😀 이모지
-- 일반 댓글 작성 😀
-- 일반 댓글 수정 😀
-- 일반 대댓글 작성 😀
-- 관리자 답글 작성 😀
-- 관리자 댓글/대댓글 수정 😀
-- 검색/카테고리/최근 사용 이모지 지원
-- 동일 입력창에 이모지 버튼 중복 생성 방지
-
-### 편집 UX 보완
-
-`sticky-editor-toolbar.js`
-
-- 긴 글 작성/수정 시 Quill 편집 툴바가 스크롤을 따라다님
-
-`post-edit-state-fix.js`
-
-- 게시글 수정 중 다른 게시글 이동 시 이전 수정 상태 정리
-- 상세 모달 종료 시 수정 UI 정리
-- 수정 횟수만큼 😀 버튼이 누적되던 문제 수정
-
-### 이미지 정리
-- 새 글 작성 중 업로드 후 취소한 임시 이미지 삭제
-- 수정 중 새로 업로드한 이미지 취소 시 삭제
-- 기존 본문에서 제거한 이미지 저장 후 Storage에서도 삭제
-
-### 보안
-- DOMPurify로 허용 태그/속성 제한
-- 외부 이미지 URL 본문 삽입 제한
-- 허용된 Quill 크기/정렬 클래스만 유지
-- 색상·배경색·정렬·허용 글자크기 관련 스타일만 보존
+- Quill 2.0.3
+- DOMPurify 3.4.16
+- 굵게/기울임/밑줄/취소선/H2/H3/목록/인용/링크/이미지
+- 부분 글자 크기/글자색/배경색/정렬
+- 제목/본문/댓글/대댓글/관리자 수정 이모지
+- 긴 글에서 sticky 툴바
+- 수정 상태 및 이모지 버튼 중복 문제 수정
 
 ### 실제 사용자 확인 완료
 - 리치 편집기 정상
-- 제목/본문 이모지 정상
-- 이모지 피커 z-index 수정 후 클릭 정상
-- 게시글 수정 상태 잔존 문제 수정 확인
-- 이모지 버튼 중복 증가 문제 수정 확인
+- 제목/본문/댓글/대댓글/관리자 수정 이모지 정상
 - sticky 편집 툴바 정상
-- 댓글/대댓글/관리자 수정 이모지 정상
+- 수정 상태 잔존 및 이모지 버튼 중복 문제 수정 확인
 
-## 15단계 SEO — 진행 중
+## 15단계 SEO — 완료
 
-목표:
-- 기본 페이지 제목/설명 정리
-- Open Graph / 소셜 공유 미리보기
-- Twitter/X 카드 메타
-- `robots.txt`
-- canonical URL
-- `sitemap.xml`
-- 검색엔진 크롤링 기본 설정
-- 실제 배포 도메인 확정 후 canonical/sitemap 최종 연결
+`seo.js`
+
+- 기본 title/description
+- 게시글 상세 진입 시 브라우저 탭 제목 및 description 갱신
+- Open Graph 기본 메타
+- Twitter/X 카드 기본 메타
+- canonical URL을 Vercel 운영주소 기준으로 설정
+
+`robots.txt`
+
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://sajangnim-community.vercel.app/sitemap.xml
+```
+
+`sitemap.xml`
+
+- 운영 홈 URL 등록
+- 실제 Vercel 배포에서 XML 정상 표시 확인
+
+### 실제 배포 검증
+- 메인 화면 정상
+- Supabase 게시글 목록 정상
+- 게시글 상세/댓글/대댓글/이미지 정상
+- 일반 로그인 정상
+- Google 로그인 정상
+- Kakao 로그인 정상
+- `robots.txt` 정상
+- `sitemap.xml` 정상
+
+## 16단계 AdSense — 진행 중
+
+점검 예정:
+- Google Publisher Policies 기준 콘텐츠/탐색/광고 배치 점검
+- 이용약관/개인정보처리방침/문의수단 등 운영 신뢰 페이지 확인
+- 사용자 생성 콘텐츠(UGC) 신고/관리 구조 확인
+- 저가치/빈 페이지/과도한 광고를 피하는 광고 위치 설계
+- 승인 전 AdSense 코드 삽입 시점 결정
+- 필요 시 `ads.txt` 적용
 
 ## 주요 파일
 
@@ -211,6 +199,9 @@ py -m http.server 3000
 - `style.css` — 전체 UI 스타일
 - `app.js` — 회원·게시글·댓글·공감·신고·관리자 기본 기능
 - `config.js` — Supabase 설정 및 보완 스크립트 로드
+- `seo.js` — 15단계 SEO
+- `robots.txt` — 검색엔진 크롤링 규칙
+- `sitemap.xml` — 운영 URL sitemap
 - `rich-post-editor.js` — 14단계 리치 편집기/이미지
 - `emoji-picker-enhancer.js` — 제목/본문/댓글 이모지
 - `sticky-editor-toolbar.js` — 긴 게시글 편집 툴바 고정
@@ -223,9 +214,9 @@ py -m http.server 3000
 - `operating-db-sync.js` — 공지/이벤트 DB 연동
 - `admin-operating-content.js` — 관리자 공지/이벤트 관리
 - `supabase-step14-rich-posts.sql` — 14단계 게시글 HTML/Storage
-- `supabase-step13-notifications.sql` — 13단계 알림 테이블/RLS/트리거
-- `supabase-step12-operating-content.sql` — 공지/이벤트 테이블/RLS
-- `supabase-step11-security-hardening.sql` — 관리자 보안
+- `supabase-step13-notifications.sql` — 13단계 알림 DB/RLS/트리거
+- `supabase-step12-operating-content.sql` — 공지/이벤트 DB/RLS
+- `supabase-step11-security-hardening.sql` — 관리자/프로필 보안
 
 ## GitHub 저장소
 
