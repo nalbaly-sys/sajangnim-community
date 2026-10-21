@@ -4,10 +4,10 @@
 
 ## 프로젝트 진행 현황
 
-- **완료:** 1~16단계
-- **진행 중:** 17단계 — 최종 보안·개인정보 점검
+- **완료:** 1~17단계
+- **17단계 완료:** 최종 보안·개인정보 점검, 개인정보처리방침/이용약관 최종화, 로컬 및 Vercel 운영 배포 회귀 테스트 완료
 - **16단계 완료:** AdSense 사이트 소유권 확인, `ads.txt` 적용, 광고·쿠키/UGC 정책 보완, Google AdSense 사이트 승인 확인
-- **다음 단계:** 17단계 최종 보안·개인정보 점검 및 배포 환경 회귀 테스트
+- **현재 상태:** 전체 로드맵 1~17단계 완료
 - **작업 원칙:** 실제 코드와 Supabase 동작을 확인한 뒤 한 단계씩 진행합니다. 기존 기능과 디자인을 불필요하게 깨뜨리지 않고, 구현 후 실제 사용자 테스트를 거쳐 완료 처리합니다.
 
 ## 전체 작업 순서 (1~17단계)
@@ -30,7 +30,7 @@
 | 14 | 이미지 업로드 + 편집기 | Storage, 이미지 보안, 리치 텍스트, 이모지, 서식, sticky 툴바, 댓글 이모지 | 완료 |
 | 15 | SEO | 페이지 제목·설명, 공유 미리보기, robots, canonical, sitemap, 검색엔진 기본 설정 | **완료** |
 | 16 | AdSense | 광고 정책 및 콘텐츠 요건 점검, `ads.txt`, 광고·쿠키/UGC 정책, 사이트 승인 | **완료** |
-| 17 | 최종 보안·개인정보 점검 | RLS·API 키·관리자 권한·스토리지·XSS·스팸·개인정보처리방침 최종 확인 | **진행 중** |
+| 17 | 최종 보안·개인정보 점검 | RLS·API 키·관리자 권한·스토리지·XSS·스팸·개인정보처리방침 최종 확인 및 운영 배포 회귀 테스트 | **완료** |
 
 ## 운영 주소
 
@@ -41,6 +41,7 @@
 - Kakao OAuth 로그인 정상
 - 게시글/댓글/대댓글/이미지/수정 기능 실제 배포 환경에서 정상 확인
 - Google AdSense 사이트 승인 확인: 2026-10-21
+- Stage 17 최종 운영 배포 정상 확인: 2026-10-22
 
 ## 실행
 
@@ -95,9 +96,8 @@ py -m http.server 3000
 - `notices`, `events` 테이블 및 RLS
 - 운영센터/공지/이벤트 UI
 - 관리자 공지·이벤트 작성·수정·삭제
-- 이용규칙/개인정보처리방침/이용약관 운영 초안
-
-> 개인정보처리방침과 이용약관은 실제 서비스 공개 전 운영자 정보, 문의 연락처, 보유기간, OAuth/Supabase 처리 구조를 17단계에서 다시 점검합니다.
+- 이용규칙/개인정보처리방침/이용약관
+- Stage 17에서 개인정보처리방침과 이용약관을 실제 운영정보 기준 최종본으로 확정
 
 ## 13단계 알림 — 완료
 
@@ -195,17 +195,26 @@ Sitemap: https://sajangnim-community.vercel.app/sitemap.xml
 - 이용약관 광고 관련 조항 보완
 - Google AdSense 사이트 상태 승인 확인: 2026-10-21
 
-## 17단계 최종 보안·개인정보 점검 — 진행 중
+## 17단계 최종 보안·개인정보 점검 — 완료
 
-현재 확인/진행 항목:
-- 핵심 public 테이블 RLS 활성 재확인
+- 핵심 public 테이블 RLS 재확인
 - browser config에 `service_role` 없음 재확인
 - `SECURITY DEFINER` 함수 `search_path=""` 및 실행 권한 재확인
+- 익명 게시글/댓글 작성자 UUID 공개 경로 차단
+- 안전 View + `is_mine` 기반 공개 조회 구조 적용
+- DOMPurify 기반 리치 콘텐츠 sanitizing 재검증 및 익명 경로 정책 통일
+- 외부 이미지/위험 링크 제한
 - Storage MIME/용량/본인 폴더 정책 재확인
-- DOMPurify 기반 리치 콘텐츠 sanitizing 재확인
-- Vercel 공통 보안 헤더 적용
-- 익명 게시글/댓글의 API 수준 작성자 식별자 노출 구조 보강 예정
-- 개인정보처리방침/이용약관 실제 운영정보 최종화 예정
+- 회원 탈퇴 전 본인 Storage 이미지 삭제
+- 게시글/댓글/신고 DB 레벨 rate limit 적용
+- 개인정보처리방침/이용약관 최종 운영문서 확정
+- 운영자: `사장님도 퇴근합니다`
+- 문의: `nalbaly@gmail.com`
+- 시행일: `2026-10-22`
+- 푸터 운영자/문의 표시
+- 광고·쿠키 안내 안정화
+- 로컬 회귀 테스트 통과
+- Vercel 운영 배포 회귀 테스트 통과
 
 세부 점검 기록은 `STAGE17_SECURITY_AUDIT.md`에서 관리합니다.
 
@@ -222,6 +231,13 @@ Sitemap: https://sajangnim-community.vercel.app/sitemap.xml
 - `adsense-readiness.js` — 광고·쿠키/UGC 운영정책 보완
 - `vercel.json` — Vercel 배포 보안 헤더
 - `STAGE17_SECURITY_AUDIT.md` — 17단계 최종 보안·개인정보 점검 기록
+- `stage17-bootstrap.js` — Stage 17 독립 로더
+- `anonymous-privacy-hardening.js` — 익명 작성자 공개 식별자 차단
+- `rich-content-security-hardening.js` — 리치 콘텐츠 렌더링 보안
+- `account-delete-storage-cleanup.js` — 회원 탈퇴 Storage 이미지 정리
+- `legal-ui-fix-v4.js` — 공용 운영 모달 최종 개인정보처리방침/이용약관/광고·쿠키 안내
+- `supabase-step17-anonymous-privacy.sql` — 익명 조회 보안 구조 기록
+- `supabase-step17-rate-limits.sql` — DB 레벨 도배/신고 제한
 - `rich-post-editor.js` — 14단계 리치 편집기/이미지
 - `emoji-picker-enhancer.js` — 제목/본문/댓글 이모지
 - `sticky-editor-toolbar.js` — 긴 게시글 편집 툴바 고정
