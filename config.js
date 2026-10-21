@@ -75,7 +75,12 @@ window.addEventListener("load",function(){
                                     richPostEditor.src="rich-post-editor.js?v=20261021-1";
                                     richPostEditor.onload=function(){
                                       const emojiPicker=document.createElement("script");
-                                      emojiPicker.src="emoji-picker-enhancer.js?v=20261021-1";
+                                      emojiPicker.src="emoji-picker-enhancer.js?v=20261021-2";
+                                      emojiPicker.onload=function(){
+                                        const postEditStateFix=document.createElement("script");
+                                        postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
+                                        document.body.appendChild(postEditStateFix);
+                                      };
                                       document.body.appendChild(emojiPicker);
                                     };
                                     document.body.appendChild(richPostEditor);
