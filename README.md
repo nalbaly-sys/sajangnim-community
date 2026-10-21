@@ -4,10 +4,10 @@
 
 ## 프로젝트 진행 현황
 
-- **완료:** 1~15단계
-- **진행 중:** 16단계 — AdSense 승인 준비
-- **15단계 완료:** Vercel 운영 주소 확정, 기본 SEO 메타, 동적 게시글 제목/설명, Open Graph, Twitter/X 카드, canonical, robots.txt, sitemap.xml, Google/Kakao OAuth 운영주소 검증
-- **다음 단계:** 16단계 AdSense → 17단계 최종 보안·개인정보 점검
+- **완료:** 1~16단계
+- **진행 중:** 17단계 — 최종 보안·개인정보 점검
+- **16단계 완료:** AdSense 사이트 소유권 확인, `ads.txt` 적용, 광고·쿠키/UGC 정책 보완, Google AdSense 사이트 승인 확인
+- **다음 단계:** 17단계 최종 보안·개인정보 점검 및 배포 환경 회귀 테스트
 - **작업 원칙:** 실제 코드와 Supabase 동작을 확인한 뒤 한 단계씩 진행합니다. 기존 기능과 디자인을 불필요하게 깨뜨리지 않고, 구현 후 실제 사용자 테스트를 거쳐 완료 처리합니다.
 
 ## 전체 작업 순서 (1~17단계)
@@ -29,8 +29,8 @@
 | 13 | 알림 | 댓글·대댓글·공감 알림, 읽음/안읽음, 배지, 모두 읽음, 원문 이동, RLS | 완료 |
 | 14 | 이미지 업로드 + 편집기 | Storage, 이미지 보안, 리치 텍스트, 이모지, 서식, sticky 툴바, 댓글 이모지 | 완료 |
 | 15 | SEO | 페이지 제목·설명, 공유 미리보기, robots, canonical, sitemap, 검색엔진 기본 설정 | **완료** |
-| 16 | AdSense | 광고 정책 및 콘텐츠 요건 점검, 광고 위치·코드 적용, 승인 준비 | **진행 중** |
-| 17 | 최종 보안·개인정보 점검 | RLS·API 키·관리자 권한·스토리지·XSS·스팸·개인정보처리방침 최종 확인 | 예정 |
+| 16 | AdSense | 광고 정책 및 콘텐츠 요건 점검, `ads.txt`, 광고·쿠키/UGC 정책, 사이트 승인 | **완료** |
+| 17 | 최종 보안·개인정보 점검 | RLS·API 키·관리자 권한·스토리지·XSS·스팸·개인정보처리방침 최종 확인 | **진행 중** |
 
 ## 운영 주소
 
@@ -40,6 +40,7 @@
 - Google OAuth 로그인 정상
 - Kakao OAuth 로그인 정상
 - 게시글/댓글/대댓글/이미지/수정 기능 실제 배포 환경에서 정상 확인
+- Google AdSense 사이트 승인 확인: 2026-10-21
 
 ## 실행
 
@@ -183,15 +184,30 @@ Sitemap: https://sajangnim-community.vercel.app/sitemap.xml
 - `robots.txt` 정상
 - `sitemap.xml` 정상
 
-## 16단계 AdSense — 진행 중
+## 16단계 AdSense — 완료
 
-점검 예정:
-- Google Publisher Policies 기준 콘텐츠/탐색/광고 배치 점검
-- 이용약관/개인정보처리방침/문의수단 등 운영 신뢰 페이지 확인
-- 사용자 생성 콘텐츠(UGC) 신고/관리 구조 확인
-- 저가치/빈 페이지/과도한 광고를 피하는 광고 위치 설계
-- 승인 전 AdSense 코드 삽입 시점 결정
-- 필요 시 `ads.txt` 적용
+- 운영 주소 `sajangnim-community.vercel.app` 등록
+- Publisher ID `ca-pub-4440430005819024`
+- 루트 `ads.txt` 적용
+- AdSense 사이트 소유권 확인 성공
+- 개인정보처리방침 광고·쿠키 안내 보완
+- 이용규칙 UGC/광고 정책 위험 콘텐츠 안내 보완
+- 이용약관 광고 관련 조항 보완
+- Google AdSense 사이트 상태 승인 확인: 2026-10-21
+
+## 17단계 최종 보안·개인정보 점검 — 진행 중
+
+현재 확인/진행 항목:
+- 핵심 public 테이블 RLS 활성 재확인
+- browser config에 `service_role` 없음 재확인
+- `SECURITY DEFINER` 함수 `search_path=""` 및 실행 권한 재확인
+- Storage MIME/용량/본인 폴더 정책 재확인
+- DOMPurify 기반 리치 콘텐츠 sanitizing 재확인
+- Vercel 공통 보안 헤더 적용
+- 익명 게시글/댓글의 API 수준 작성자 식별자 노출 구조 보강 예정
+- 개인정보처리방침/이용약관 실제 운영정보 최종화 예정
+
+세부 점검 기록은 `STAGE17_SECURITY_AUDIT.md`에서 관리합니다.
 
 ## 주요 파일
 
@@ -202,6 +218,10 @@ Sitemap: https://sajangnim-community.vercel.app/sitemap.xml
 - `seo.js` — 15단계 SEO
 - `robots.txt` — 검색엔진 크롤링 규칙
 - `sitemap.xml` — 운영 URL sitemap
+- `ads.txt` — Google AdSense 판매자 승인 정보
+- `adsense-readiness.js` — 광고·쿠키/UGC 운영정책 보완
+- `vercel.json` — Vercel 배포 보안 헤더
+- `STAGE17_SECURITY_AUDIT.md` — 17단계 최종 보안·개인정보 점검 기록
 - `rich-post-editor.js` — 14단계 리치 편집기/이미지
 - `emoji-picker-enhancer.js` — 제목/본문/댓글 이모지
 - `sticky-editor-toolbar.js` — 긴 게시글 편집 툴바 고정
