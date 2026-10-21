@@ -17,9 +17,9 @@
     s.textContent=`
       .emoji-title-row{display:flex;align-items:center;gap:8px;width:100%}.emoji-title-row>input{flex:1;min-width:0}.emoji-open-button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;padding:0 10px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:20px;cursor:pointer}.emoji-open-button:hover{background:#f8fafc}.emoji-open-button:focus{outline:2px solid #2563eb;outline-offset:2px}
       .emoji-body-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;border:0;background:transparent;font-size:18px;cursor:pointer;border-radius:4px}.emoji-body-button:hover{background:#e5e7eb}
-      .emoji-picker-popover{position:fixed;z-index:10050;width:min(360px,calc(100vw - 24px));max-height:min(520px,calc(100vh - 100px));background:#fff;border:1px solid #d1d5db;border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.22);padding:8px;display:none}.emoji-picker-popover.open{display:block}.emoji-picker-popover emoji-picker{width:100%;height:460px;max-height:calc(100vh - 130px)}
+      .emoji-picker-popover{position:fixed!important;z-index:2147483646!important;width:min(360px,calc(100vw - 24px));max-height:min(520px,calc(100vh - 100px));background:#fff;border:1px solid #d1d5db;border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.28);padding:8px;display:none;pointer-events:auto!important;isolation:isolate;transform:translateZ(0)}.emoji-picker-popover.open{display:block!important}.emoji-picker-popover emoji-picker{display:block;width:100%;height:460px;max-height:calc(100vh - 130px);pointer-events:auto!important}
       .emoji-picker-arrow-note{font-size:11px;color:#6b7280;padding:2px 4px 7px;text-align:center}
-      @media(max-width:600px){.emoji-title-row{gap:6px}.emoji-open-button{min-width:40px;height:40px;padding:0 8px}.emoji-picker-popover{left:12px!important;right:12px!important;top:72px!important;width:auto}.emoji-picker-popover emoji-picker{height:62vh;max-height:62vh}}
+      @media(max-width:600px){.emoji-title-row{gap:6px}.emoji-open-button{min-width:40px;height:40px;padding:0 8px}.emoji-picker-popover{left:12px!important;right:12px!important;top:72px!important;width:auto!important}.emoji-picker-popover emoji-picker{height:62vh;max-height:62vh}}
     `;
     document.head.appendChild(s);
   }
@@ -39,6 +39,8 @@
     pickerHost.className='emoji-picker-popover';
     pickerHost.innerHTML='<div class="emoji-picker-arrow-note">이모지를 검색하거나 카테고리에서 선택하세요</div><emoji-picker locale="ko"></emoji-picker>';
     document.body.appendChild(pickerHost);
+    pickerHost.style.zIndex='2147483646';
+    pickerHost.style.pointerEvents='auto';
     pickerHost.querySelector('emoji-picker').addEventListener('emoji-click',function(event){
       const emoji=event?.detail?.unicode||'';
       if(!emoji||!activeTarget)return;
@@ -64,7 +66,7 @@
     if(window.innerWidth<=600){pickerHost.style.left='12px';pickerHost.style.right='12px';pickerHost.style.top='72px';return;}
     const rect=button.getBoundingClientRect();
     const width=Math.min(360,window.innerWidth-24);
-    let left=Math.min(Math.max(12,rect.left),window.innerWidth-width-12);
+    const left=Math.min(Math.max(12,rect.left),window.innerWidth-width-12);
     let top=rect.bottom+8;
     const estimatedHeight=Math.min(520,window.innerHeight-100);
     if(top+estimatedHeight>window.innerHeight-12)top=Math.max(12,rect.top-estimatedHeight-8);
@@ -77,6 +79,7 @@
       const host=ensurePicker();
       activeTarget={...target,button};
       positionPicker(button);
+      host.style.zIndex='2147483646';
       host.classList.add('open');
       setTimeout(()=>host.querySelector('emoji-picker')?.shadowRoot?.querySelector('input')?.focus?.(),30);
     }catch(_){alert('이모지 목록을 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');}
