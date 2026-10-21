@@ -29,7 +29,7 @@
   - `Referrer-Policy: strict-origin-when-cross-origin`
   - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 
-### 익명 게시글/댓글 작성자 UUID 보호
+### 익명 게시글/댓글 작성자 UUID 보호 — 완료
 
 구현:
 - `posts_public_safe` 공개 조회 View 추가
@@ -50,10 +50,37 @@ DB 검증:
 - anon 역할에서 `comments_public_safe` 익명 ACTIVE 행 조회 결과: 19건
 - 안전 View 컬럼 목록에 `user_id`, `reply_to_user_id` 없음 확인
 
-상태:
-- DB 적용 및 SQL 검증 완료
-- GitHub 코드 적용 완료
-- Vercel 브라우저 회귀 테스트 필요
+브라우저 회귀 테스트:
+- 익명 게시글 목록 정상
+- 익명 게시글 상세/이미지 정상
+- 익명 댓글/대댓글 정상
+- 댓글 공감/신고 정상
+
+### XSS / HTML / 링크 / 이미지 렌더링 보안 — 완료
+
+확인 및 보강:
+- 일반 리치 게시글 렌더러는 DOMPurify + 게시글 전용 allowlist 사용 확인
+- 익명 게시글 렌더러가 DOMPurify 기본 설정만 사용하던 차이를 발견
+- `rich-content-security-hardening.js` 추가
+- 익명/일반 렌더링 모두 허용 태그/속성 정책을 동일하게 강제
+- 링크는 `http://`, `https://`, `mailto:`만 허용
+- 링크에 `target="_blank"`, `rel="noopener noreferrer nofollow"` 강제
+- 이미지는 Supabase `post-images` 공개 경로만 허용
+- 외부 이미지 URL 제거
+- 이미지에 `loading="lazy"`, `referrerpolicy="no-referrer"` 적용
+- 허용 Quill class와 제한된 색상/배경/정렬/글자크기 스타일만 유지
+
+DB 저장 데이터 검사:
+- `<script>`, `onerror`, `onload`, `javascript:` 의심 패턴: 0건
+- 외부 이미지 URL 패턴: 0건
+- 비정상 링크 프로토콜 패턴: 0건
+
+Storage 정책 재확인:
+- authenticated INSERT는 본인 UUID 폴더만 허용
+- jpg/jpeg/png/webp/gif 확장자만 허용
+- SVG 업로드 불가
+- DELETE는 본인 UUID 폴더만 허용
+- 버킷 한 파일 최대 5MB 및 허용 MIME 제한 유지
 
 ## 추가 보강 필요
 
@@ -70,15 +97,16 @@ DB 검증:
 
 실제 운영자 정보는 임의로 작성하지 않는다.
 
-### 2. Storage 공개 이미지 정책
+### 2. Storage 공개 이미지 삭제 정책
 
-`post-images`는 게시글 본문에 이미지를 공개 표시하기 위해 public bucket으로 운용 중이다.
-업로드/삭제는 본인 UUID 폴더만 가능하지만 공개 URL을 아는 사용자는 이미지를 조회할 수 있다.
+`post-images`는 게시글 본문 이미지를 공개 표시하기 위해 public bucket으로 운용 중이다.
+업로드/삭제 권한은 제한되어 있으나 공개 URL을 아는 사용자는 게시글 공개 이미지에 접근할 수 있다.
 
-확인할 운영 원칙:
-- 게시글 공개 이미지로 계속 사용할 경우 현재 방식 유지 가능
-- 삭제 게시글 이미지의 정리 정책 확인
-- 민감정보 이미지 업로드 금지 안내 강화
+남은 점검:
+- 게시글 삭제 시 연결 이미지 정리 방식 확정
+- 관리자 삭제 시 타 사용자 이미지 정리 방식 확정
+- 민감정보가 포함된 이미지 업로드 금지 안내 강화
+- 고아(orphan) 이미지 정리 기준 마련
 
 ### 3. 스팸/남용 방지
 
@@ -91,9 +119,9 @@ DB 검증:
 
 ## Stage 17 진행 순서
 
-1. 익명 콘텐츠 식별자 노출 구조 수정 — DB/코드 적용 완료, 브라우저 테스트 필요
-2. XSS/HTML/링크/이미지 경로 재검증
-3. Storage 삭제 및 민감정보 정책 점검
+1. 익명 콘텐츠 식별자 노출 구조 수정 — 완료
+2. XSS/HTML/링크/이미지 경로 재검증 — 완료
+3. Storage 삭제 및 민감정보 정책 점검 — 진행 중
 4. 스팸/남용 방지 기준 확정
 5. 개인정보처리방침/이용약관 최종화
 6. 실제 배포 환경 회귀 테스트
