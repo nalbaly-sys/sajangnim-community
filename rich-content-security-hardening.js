@@ -17,6 +17,19 @@
     document.body.appendChild(bootstrap);
   }
 
+  /*
+   * 로그아웃 첫 진입 회귀 보정
+   * app.js의 초기 목록 조회가 anonymous privacy override보다 먼저 실행될 수 있다.
+   * anonymous-privacy-hardening.js가 window.searchPosts를 safe view 기반 함수로
+   * 교체한 뒤 이 파일이 로드되므로, 여기서 게시글 목록을 정확히 한 번 재조회한다.
+   */
+  if(!window.__safePublicPostsInitialRefreshDone && typeof window.searchPosts==='function'){
+    window.__safePublicPostsInitialRefreshDone=true;
+    Promise.resolve()
+      .then(()=>window.searchPosts())
+      .catch(e=>console.error('공개 게시글 초기 재조회 오류:',e));
+  }
+
   const purify=window.DOMPurify;
   if(!purify||purify.__sajangnimStrictRender)return;
 
