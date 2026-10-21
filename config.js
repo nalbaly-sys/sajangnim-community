@@ -78,7 +78,7 @@ window.addEventListener("load",function(){
                                       stickyToolbar.src="sticky-editor-toolbar.js?v=20261021-1";
                                       stickyToolbar.onload=function(){
                                         const emojiPicker=document.createElement("script");
-                                        emojiPicker.src="emoji-picker-enhancer.js?v=20261021-3";
+                                        emojiPicker.src="emoji-picker-enhancer.js?v=20261021-4";
                                         emojiPicker.onload=function(){
                                           const postEditStateFix=document.createElement("script");
                                           postEditStateFix.src="post-edit-state-fix.js?v=20261021-1";
