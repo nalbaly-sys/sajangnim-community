@@ -90,7 +90,12 @@ window.addEventListener("load",function(){
                                               adsenseReadiness.src="adsense-readiness.js?v=20261021-1";
                                               adsenseReadiness.onload=function(){
                                                 const anonymousPrivacy=document.createElement("script");
-                                                anonymousPrivacy.src="anonymous-privacy-hardening.js?v=20261021-1";
+                                                anonymousPrivacy.src="anonymous-privacy-hardening.js?v=20261021-2";
+                                                anonymousPrivacy.onload=function(){
+                                                  const richSecurity=document.createElement("script");
+                                                  richSecurity.src="rich-content-security-hardening.js?v=20261021-1";
+                                                  document.body.appendChild(richSecurity);
+                                                };
                                                 document.body.appendChild(anonymousPrivacy);
                                               };
                                               document.body.appendChild(adsenseReadiness);
