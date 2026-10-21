@@ -73,6 +73,11 @@ window.addEventListener("load",function(){
                                   notifications.onload=function(){
                                     const richPostEditor=document.createElement("script");
                                     richPostEditor.src="rich-post-editor.js?v=20261021-1";
+                                    richPostEditor.onload=function(){
+                                      const emojiPicker=document.createElement("script");
+                                      emojiPicker.src="emoji-picker-enhancer.js?v=20261021-1";
+                                      document.body.appendChild(emojiPicker);
+                                    };
                                     document.body.appendChild(richPostEditor);
                                   };
                                   document.body.appendChild(notifications);
