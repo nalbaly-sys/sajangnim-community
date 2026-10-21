@@ -3,6 +3,7 @@
    - DOMPurify 기본 호출에도 게시글 전용 allowlist 적용
    - post-images 외부 이미지 제거
    - 링크 프로토콜 제한 + noopener/noreferrer/nofollow
+   - 공개 이미지 민감정보 업로드 경고
 ================================================== */
 (function(){
   const purify=window.DOMPurify;
@@ -74,6 +75,19 @@
     const clean=originalSanitize(String(dirty||''),{ALLOWED_TAGS,ALLOWED_ATTR});
     return postProcess(clean);
   };
+
+  function applyImagePrivacyNotice(){
+    document.querySelectorAll('.rich-post-upload-note').forEach(note=>{
+      if(note.dataset.stage17Privacy==='1')return;
+      note.dataset.stage17Privacy='1';
+      note.textContent='📷 이미지: JPG · PNG · WEBP · GIF / 장당 최대 5MB · ⚠️ 공개 게시글 이미지는 공개 URL로 표시됩니다. 신분증·계좌번호·전화번호·주소·고객정보 등 민감정보가 포함된 이미지는 업로드하지 마세요.';
+      note.style.lineHeight='1.6';
+    });
+  }
+
+  applyImagePrivacyNotice();
+  const observer=new MutationObserver(applyImagePrivacyNotice);
+  observer.observe(document.body,{childList:true,subtree:true});
 
   purify.__sajangnimStrictRender=true;
 })();
