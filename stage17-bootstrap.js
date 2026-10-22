@@ -1,6 +1,6 @@
 /* ==================================================
    STEP 17+: 독립 부트스트랩
-   - DOMPurify 로드 여부와 무관하게 운영문서/회원탈퇴/비로그인 UX/분류체계/피드/모바일 UX 보정을 항상 로드
+   - DOMPurify 로드 여부와 무관하게 운영문서/회원탈퇴/비로그인 UX/분류체계/피드/모바일 UX/투표 보정을 항상 로드
 ================================================== */
 (function(){
   function loadOnce(id,src,onload){
@@ -25,7 +25,9 @@
   loadOnce('communityTaxonomy','community-taxonomy.js?v=20261022-2',function(){
     loadOnce('postFeedImprovements','post-feed-improvements.js?v=20261022-2',function(){
       loadOnce('mobileUxPolish','mobile-ux-polish.js?v=20261022-2',function(){
-        loadOnce('communityDensityPolish','community-density-polish.js?v=20261022-2');
+        loadOnce('communityDensityPolish','community-density-polish.js?v=20261022-2',function(){
+          loadOnce('postPollFeature','poll-feature.js?v=20261022-1');
+        });
       });
     });
   });
