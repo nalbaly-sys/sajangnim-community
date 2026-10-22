@@ -24,7 +24,7 @@
   loadOnce('guestAuthUiFix','guest-auth-ui-fix.js?v=20261022-2');
   loadOnce('communityTaxonomy','community-taxonomy.js?v=20261022-2',function(){
     loadOnce('postFeedImprovements','post-feed-improvements.js?v=20261022-2',function(){
-      loadOnce('mobileUxPolish','mobile-ux-polish.js?v=20261022-1');
+      loadOnce('mobileUxPolish','mobile-ux-polish.js?v=20261022-2');
     });
   });
   loadOnce('operatingCenterCleanup','operating-center-cleanup.js?v=20261022-1');
