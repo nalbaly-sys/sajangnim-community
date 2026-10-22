@@ -1,8 +1,9 @@
 /* ==================================================
-   COMMUNITY TAXONOMY v1
+   COMMUNITY TAXONOMY v2
    - 업종 확대
    - 게시판 카테고리 재정리
    - 회원가입/마이페이지/글쓰기/검색 UI 공통 적용
+   - 초기 구 카테고리 깜빡임 방지
 ================================================== */
 (function(){
   const INDUSTRIES=[
@@ -74,10 +75,20 @@
     if(current&&items.some(([value])=>value===current))select.value=current;
   }
 
+  function revealCategoryGrid(){
+    const prepaint=document.getElementById('taxonomyPrepaintStyle');
+    if(prepaint)prepaint.remove();
+    const grid=document.querySelector('.category-grid');
+    if(grid)grid.style.visibility='visible';
+  }
+
   function renderCategoryButtons(){
     const grid=document.querySelector('.category-grid');
     if(!grid)return;
-    if(grid.dataset.taxonomyVersion==='1')return;
+    if(grid.dataset.taxonomyVersion==='2'){
+      revealCategoryGrid();
+      return;
+    }
     grid.innerHTML='';
     CATEGORIES.forEach(([value,label])=>{
       const button=document.createElement('button');
@@ -88,7 +99,8 @@
       });
       grid.appendChild(button);
     });
-    grid.dataset.taxonomyVersion='1';
+    grid.dataset.taxonomyVersion='2';
+    revealCategoryGrid();
   }
 
   function applyTaxonomy(){
