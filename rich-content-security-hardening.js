@@ -13,7 +13,7 @@
   if(!document.getElementById('stage17Bootstrap')){
     const bootstrap=document.createElement('script');
     bootstrap.id='stage17Bootstrap';
-    bootstrap.src='stage17-bootstrap.js?v=20261022-6';
+    bootstrap.src='stage17-bootstrap.js?v=20261022-7';
     document.body.appendChild(bootstrap);
   }
 
