@@ -45,9 +45,9 @@ grant select, insert, delete on public.poll_options to authenticated;
 grant select on public.poll_options to anon;
 grant select, insert on public.poll_votes to authenticated;
 
-grant usage, select on sequence public.post_polls_id_seq to authenticated;
-grant usage, select on sequence public.poll_options_id_seq to authenticated;
-grant usage, select on sequence public.poll_votes_id_seq to authenticated;
+-- 기존 posts/comments/reactions/reports 등도 public sequence를 사용하므로
+-- 투표 기능 추가 시 기존 등록 기능의 sequence 권한을 유지한다.
+grant usage, select on all sequences in schema public to authenticated;
 
 drop policy if exists post_polls_public_select on public.post_polls;
 create policy post_polls_public_select on public.post_polls
