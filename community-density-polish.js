@@ -1,8 +1,9 @@
 /* ==================================================
    COMMUNITY DENSITY POLISH
    - 카테고리 / 공지·운영센터: 접속 시 기본 펼침, 사용자가 접을 수 있음
-   - 공지/이벤트 목록: 제목 + 날짜만 표시, 클릭 시 상세 보기
+   - 공지/이벤트 목록: 배지 + 제목 + 날짜만 표시, 클릭 시 상세 보기
    - 게시글 목록: 본문 미리보기 숨김
+   - 카드 영역: 은은한 컬러톤/그라데이션/호버로 시각 구분
 ================================================== */
 (function(){
   const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -16,26 +17,107 @@
     const s=document.createElement('style');
     s.id='communityDensityPolishStyles';
     s.textContent=`
+      :root{
+        --community-ink:#172033;
+        --community-muted:#7b8495;
+        --community-line:#e7eaf0;
+        --community-shadow:0 14px 34px rgba(31,41,55,.07);
+      }
+
       .community-collapse-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-      .community-collapse-toggle{border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:9px;padding:7px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+      .community-collapse-toggle{border:1px solid #dfe3ea;background:rgba(255,255,255,.82);color:#4b5563;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px rgba(15,23,42,.04);transition:.18s ease}
+      .community-collapse-toggle:hover{background:#fff;transform:translateY(-1px);border-color:#cfd5df}
+
+      .category-section{
+        background:linear-gradient(145deg,#fffdf9 0%,#f8fbff 48%,#fbf8ff 100%)!important;
+        border:1px solid #edf0f5!important;
+        box-shadow:var(--community-shadow)!important;
+        position:relative;
+        overflow:hidden;
+      }
+      .category-section:before{
+        content:'';position:absolute;inset:0 0 auto 0;height:4px;
+        background:linear-gradient(90deg,#f3c27b,#94c9ff,#c6a7f5);
+        opacity:.8;
+      }
+      .category-section h2{color:var(--community-ink)}
+      .category-section .category-grid button{
+        background:rgba(255,255,255,.76)!important;
+        border:1px solid rgba(222,226,234,.95)!important;
+        box-shadow:0 5px 14px rgba(31,41,55,.035);
+        color:#20293a;
+        transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease;
+      }
+      .category-section .category-grid button:nth-child(3n+1){background:linear-gradient(145deg,#fffaf4,#ffffff)!important}
+      .category-section .category-grid button:nth-child(3n+2){background:linear-gradient(145deg,#f5faff,#ffffff)!important}
+      .category-section .category-grid button:nth-child(3n){background:linear-gradient(145deg,#faf7ff,#ffffff)!important}
+      .category-section .category-grid button:hover{
+        transform:translateY(-2px);
+        box-shadow:0 10px 22px rgba(31,41,55,.08);
+        border-color:#cfd7e3!important;
+      }
       .category-section.is-collapsed .category-grid{display:none!important}
       .category-section.is-collapsed{padding-bottom:18px!important}
+
+      #operationsSection{
+        background:linear-gradient(145deg,#f8fbff 0%,#ffffff 48%,#f7fbf8 100%)!important;
+        border:1px solid #e7edf4!important;
+        box-shadow:var(--community-shadow)!important;
+        position:relative;
+        overflow:hidden;
+      }
+      #operationsSection:before{
+        content:'';position:absolute;inset:0 0 auto 0;height:4px;
+        background:linear-gradient(90deg,#7fb2ff,#7ed6b2);
+        opacity:.78;
+      }
+      #operationsSection .ops-card{
+        background:rgba(255,255,255,.72)!important;
+        border:1px solid rgba(224,229,237,.95)!important;
+        box-shadow:0 6px 18px rgba(31,41,55,.035);
+      }
       #operationsSection.is-collapsed .ops-grid{display:none!important}
       #operationsSection.is-collapsed{padding-bottom:15px!important}
-      .ops-list-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:0;border-bottom:1px solid #f3f4f6;background:transparent;padding:12px 0;color:#111827;cursor:pointer}
+
+      .ops-list-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:0;border-bottom:1px solid #edf0f4;background:transparent;padding:12px 0;color:#111827;cursor:pointer;transition:background .16s ease,padding .16s ease}
       .ops-list-row:last-child{border-bottom:0}
-      .ops-list-row:hover strong{text-decoration:underline}
-      .ops-list-row strong{font-size:14px;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .ops-list-row:hover{background:rgba(248,250,252,.8);padding-left:6px;padding-right:6px}
+      .ops-list-main{display:flex;align-items:center;gap:8px;min-width:0}
+      .ops-list-main strong{font-size:14px;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .ops-list-row small{font-size:11px;color:#9ca3af;white-space:nowrap}
-      .ops-detail-modal{display:none;position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.55);padding:18px;align-items:center;justify-content:center}
+      .ops-mini-badge{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:40px;height:22px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.01em}
+      .ops-mini-badge.pinned{background:#1f2937;color:#fff;box-shadow:0 3px 8px rgba(17,24,39,.18)}
+      .ops-mini-badge.info{background:#eef2ff;color:#4f46e5;border:1px solid #dfe3ff}
+      .ops-mini-badge.event{background:#ecfdf5;color:#047857;border:1px solid #c9f3df}
+
+      .post-section{
+        background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%)!important;
+        border:1px solid #e8ebf1!important;
+        box-shadow:0 12px 32px rgba(31,41,55,.055)!important;
+      }
+      .post-card{
+        background:linear-gradient(145deg,#ffffff 0%,#fbfcff 100%)!important;
+        border:1px solid #e7eaf0!important;
+        box-shadow:0 5px 16px rgba(31,41,55,.035);
+        transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;
+      }
+      .post-card:nth-child(3n+2){background:linear-gradient(145deg,#fffefb 0%,#ffffff 100%)!important}
+      .post-card:nth-child(3n){background:linear-gradient(145deg,#fbfffd 0%,#ffffff 100%)!important}
+      .post-card:hover{transform:translateY(-2px)!important;box-shadow:0 11px 26px rgba(31,41,55,.09)!important;border-color:#d8dee8!important}
+      .post-category{background:#eef2ff!important;color:#4f46e5!important;border:1px solid #e0e5ff}
+      .post-business-type{background:#f8fafc!important;border:1px solid #e7ebf0!important;color:#657084!important}
+      .post-title{color:#192235!important}
+      .post-preview{display:none!important}
+
+      .ops-detail-modal{display:none;position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.58);padding:18px;align-items:center;justify-content:center;backdrop-filter:blur(5px)}
       .ops-detail-modal.open{display:flex}
-      .ops-detail-box{position:relative;width:100%;max-width:720px;max-height:88vh;overflow:auto;background:#fff;border-radius:18px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+      .ops-detail-box{position:relative;width:100%;max-width:720px;max-height:88vh;overflow:auto;background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);border:1px solid #e8ebf1;border-radius:20px;padding:26px;box-shadow:0 28px 90px rgba(15,23,42,.3)}
       .ops-detail-close{position:absolute;right:14px;top:10px;border:0;background:transparent;font-size:28px;color:#6b7280}
       .ops-detail-type{font-size:12px;font-weight:800;color:#6b7280;margin-bottom:8px}
-      .ops-detail-title{margin:0 42px 8px 0;font-size:22px;line-height:1.45}
+      .ops-detail-title{margin:0 42px 8px 0;font-size:22px;line-height:1.45;color:#172033}
       .ops-detail-date{color:#9ca3af;font-size:12px;margin-bottom:18px}
       .ops-detail-content{white-space:pre-wrap;word-break:break-word;line-height:1.8;color:#374151;font-size:14px}
-      .post-preview{display:none!important}
+
       @media(max-width:700px){
         .category-section.is-collapsed{padding:14px 16px!important}
         .category-section.is-collapsed h2{margin:0!important;font-size:18px!important}
@@ -44,9 +126,12 @@
         #operationsSection.is-collapsed .ops-section-head p{display:none!important}
         .community-collapse-toggle{padding:6px 9px;font-size:11px}
         .ops-list-row{padding:10px 0;gap:8px}
-        .ops-list-row strong{font-size:13px}
+        .ops-list-main{gap:6px}
+        .ops-list-main strong{font-size:13px}
+        .ops-mini-badge{min-width:36px;height:20px;padding:0 7px;font-size:9px}
         .ops-detail-box{padding:24px 18px}
         .ops-detail-title{font-size:19px}
+        .post-card{box-shadow:0 4px 12px rgba(31,41,55,.035)!important}
       }
     `;
     document.head.appendChild(s);
@@ -144,8 +229,8 @@
       if(nr.error||er.error)throw nr.error||er.error;
       noticeCache=nr.data||[];
       eventCache=er.data||[];
-      cards.notice.innerHTML='<h3>공지사항</h3>'+(noticeCache.length?noticeCache.map(n=>`<button type="button" class="ops-list-row" onclick="openOpsContentDetail(\'notice\',${Number(n.id)})"><strong>${esc(n.title)}</strong><small>${esc(fmtDate(n.published_at||n.created_at))}</small></button>`).join(''):'<div class="ops-event-empty">등록된 공지가 없습니다.</div>');
-      cards.event.innerHTML='<h3>이벤트</h3>'+(eventCache.length?eventCache.map(e=>`<button type="button" class="ops-list-row" onclick="openOpsContentDetail(\'event\',${Number(e.id)})"><strong>${esc(e.title)}</strong><small>${esc(fmtDate(e.starts_at||e.published_at||e.created_at))}</small></button>`).join(''):'<div class="ops-event-empty"><strong>현재 진행 중인 이벤트가 없습니다.</strong></div>');
+      cards.notice.innerHTML='<h3>공지사항</h3>'+(noticeCache.length?noticeCache.map(n=>`<button type="button" class="ops-list-row" onclick="openOpsContentDetail(\'notice\',${Number(n.id)})"><span class="ops-list-main"><span class="ops-mini-badge ${n.is_pinned?'pinned':'info'}">${n.is_pinned?'필독':'안내'}</span><strong>${esc(n.title)}</strong></span><small>${esc(fmtDate(n.published_at||n.created_at))}</small></button>`).join(''):'<div class="ops-event-empty">등록된 공지가 없습니다.</div>');
+      cards.event.innerHTML='<h3>이벤트</h3>'+(eventCache.length?eventCache.map(e=>`<button type="button" class="ops-list-row" onclick="openOpsContentDetail(\'event\',${Number(e.id)})"><span class="ops-list-main"><span class="ops-mini-badge event">EVENT</span><strong>${esc(e.title)}</strong></span><small>${esc(fmtDate(e.starts_at||e.published_at||e.created_at))}</small></button>`).join(''):'<div class="ops-event-empty"><strong>현재 진행 중인 이벤트가 없습니다.</strong></div>');
     }catch(e){console.warn('간결한 공지/이벤트 조회 실패:',e);}
   }
 
