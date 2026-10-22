@@ -1,4 +1,18 @@
 /* ==================================================
+   분류체계 초기 화면 깜빡임 방지
+   - 초기 HTML의 구 카테고리가 잠깐 보이지 않도록 먼저 숨김
+   - community-taxonomy.js가 새 카테고리를 렌더링한 뒤 다시 표시
+================================================== */
+(function(){
+  if(document.getElementById('taxonomyPrepaintStyle'))return;
+  const s=document.createElement('style');
+  s.id='taxonomyPrepaintStyle';
+  s.textContent='.category-grid{visibility:hidden!important}';
+  document.head.appendChild(s);
+  setTimeout(()=>document.getElementById('taxonomyPrepaintStyle')?.remove(),4000);
+})();
+
+/* ==================================================
    SUPABASE 설정
    ⚠️ 아래 값은 주인님의 Supabase 프로젝트 값으로 교체
 ================================================== */
