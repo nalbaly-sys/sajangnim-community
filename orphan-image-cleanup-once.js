@@ -15,8 +15,8 @@
 
   async function cleanup(){
     if(running||localStorage.getItem(FLAG)==='1')return;
-    if(!window.currentUser||currentUser.id!==OWNER_ID)return;
-    if(!window.supabaseClient?.storage)return;
+    if(typeof currentUser==='undefined'||!currentUser||currentUser.id!==OWNER_ID)return;
+    if(typeof supabaseClient==='undefined'||!supabaseClient?.storage)return;
     running=true;
     try{
       const {error}=await supabaseClient.storage.from('post-images').remove(PATHS);
