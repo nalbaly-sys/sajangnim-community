@@ -23,7 +23,7 @@
   loadOnce('stage17FinalLegalDocsV4','legal-ui-fix-v4.js?v=20261022-4');
   loadOnce('guestAuthUiFix','guest-auth-ui-fix.js?v=20261022-2');
   loadOnce('communityTaxonomy','community-taxonomy.js?v=20261022-1',function(){
-    loadOnce('postFeedImprovements','post-feed-improvements.js?v=20261022-1');
+    loadOnce('postFeedImprovements','post-feed-improvements.js?v=20261022-2');
   });
   loadOnce('operatingCenterCleanup','operating-center-cleanup.js?v=20261022-1');
   loadOnce('orphanImageCleanupOnce','orphan-image-cleanup-once.js?v=20261022-2');
