@@ -93,7 +93,7 @@ window.addEventListener("load",function(){
                                                 anonymousPrivacy.src="anonymous-privacy-hardening.js?v=20261021-2";
                                                 anonymousPrivacy.onload=function(){
                                                   const richSecurity=document.createElement("script");
-                                                  richSecurity.src="rich-content-security-hardening.js?v=20261021-1";
+                                                  richSecurity.src="rich-content-security-hardening.js?v=20261022-2";
                                                   document.body.appendChild(richSecurity);
                                                 };
                                                 document.body.appendChild(anonymousPrivacy);
