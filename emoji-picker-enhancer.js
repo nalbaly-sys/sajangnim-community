@@ -47,6 +47,7 @@
       const emoji=event?.detail?.unicode||'';
       if(!emoji||!activeTarget)return;
       insertEmoji(activeTarget,emoji);
+      closePicker();
     });
     document.addEventListener('mousedown',function(event){
       if(!pickerHost?.classList.contains('open'))return;
