@@ -135,7 +135,7 @@
 
   async function loadCompactOperatingContent(){
     const cards=getCards();
-    if(!cards||!window.supabaseClient)return;
+    if(!cards)return;
     try{
       const [nr,er]=await Promise.all([
         supabaseClient.from('notices').select('id,title,content,is_pinned,published_at,created_at').order('is_pinned',{ascending:false}).order('published_at',{ascending:false}).limit(10),
