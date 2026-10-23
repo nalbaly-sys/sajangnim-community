@@ -27,7 +27,9 @@
       loadOnce('mobileUxPolish','mobile-ux-polish.js?v=20261022-2',function(){
         loadOnce('communityDensityPolish','community-density-polish.js?v=20261022-2',function(){
           loadOnce('postPollFeature','poll-feature.js?v=20261022-2',function(){
-            loadOnce('postPollFeatureFixV2','poll-feature-fix-v2.js?v=20261023-1');
+            loadOnce('postPollFeatureFixV2','poll-feature-fix-v2.js?v=20261023-1',function(){
+              loadOnce('pollCalendarEnhancer','poll-calendar-enhancer.js?v=20261023-1');
+            });
           });
         });
       });
