@@ -38,7 +38,9 @@
   loadOnce('commentVisualPolish','comment-visual-polish.js?v=20261023-1');
   loadOnce('commentAnonymousReplyFix','comment-anonymous-reply-fix.js?v=20261023-1',function(){
     loadOnce('commentReplyAnonymityV2','comment-reply-anonymity-v2.js?v=20261023-1',function(){
-      loadOnce('commentNicknameDisplayFix','comment-nickname-display-fix.js?v=20261023-1');
+      loadOnce('commentNicknameDisplayFix','comment-nickname-display-fix.js?v=20261023-1',function(){
+        loadOnce('adminAuthorIdentityPolish','admin-author-identity-polish.js?v=20261023-1');
+      });
     });
   });
   loadOnce('operatingCenterCleanup','operating-center-cleanup.js?v=20261022-1');
