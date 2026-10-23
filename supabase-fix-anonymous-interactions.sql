@@ -34,7 +34,7 @@ $$;
 revoke all on function public.is_active_post_for_interaction(bigint) from public;
 revoke all on function public.is_active_comment_for_interaction(bigint) from public;
 grant execute on function public.is_active_post_for_interaction(bigint) to authenticated;
-grant execute on function public.is_active_comment_for_interaction(bigint) to authenticated;
+grant execute on function public.is_active_comment_for_interaction(bigint) to authenticated, anon;
 
 drop policy if exists comments_insert_own on public.comments;
 create policy comments_insert_own on public.comments
