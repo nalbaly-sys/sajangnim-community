@@ -35,6 +35,7 @@
       });
     });
   });
+  loadOnce('commentVisualPolish','comment-visual-polish.js?v=20261023-1');
   loadOnce('operatingCenterCleanup','operating-center-cleanup.js?v=20261022-1');
   loadOnce('orphanImageCleanupOnce','orphan-image-cleanup-once.js?v=20261022-2');
 })();
